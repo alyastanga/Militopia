@@ -9,12 +9,13 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.militopia.MilitopiaGame;
 import com.militopia.managers.AssetManager;
 import com.militopia.managers.AudioManager;
@@ -31,7 +32,7 @@ public class MenuScreen implements Screen {
 
     public MenuScreen(final MilitopiaGame game) {
         this.game = game;
-        stage = new Stage(new ScreenViewport());
+        stage = new Stage(new ExtendViewport(1280, 720));
         Gdx.input.setInputProcessor(stage);
 
         Table table = new Table();
@@ -115,19 +116,19 @@ public class MenuScreen implements Screen {
         Image logoImage = new Image(new TextureRegionDrawable(new TextureRegion(logoTex)));
         logoImage.setScaling(Scaling.fit);
 
-        table.add(logoImage).width(600).height(200).padBottom(15);
+        table.add(logoImage).width(Value.percentWidth(0.5f, table)).height(Value.percentHeight(0.3f, table)).padBottom(15);
         table.row();
-        table.add(newGameBtn).fillX().width(400).pad(4);
+        table.add(newGameBtn).fillX().width(Value.percentWidth(0.35f, table)).pad(4);
         table.row();
-        table.add(lanBtn).fillX().width(400).pad(4);
+        table.add(lanBtn).fillX().width(Value.percentWidth(0.35f, table)).pad(4);
         table.row();
-        table.add(tutorialBtn).fillX().width(400).pad(4);
+        table.add(tutorialBtn).fillX().width(Value.percentWidth(0.35f, table)).pad(4);
         table.row();
-        table.add(resumeBtn).fillX().width(400).pad(4);
+        table.add(resumeBtn).fillX().width(Value.percentWidth(0.35f, table)).pad(4);
         table.row();
-        table.add(soundBtn).fillX().width(400).pad(4);
+        table.add(soundBtn).fillX().width(Value.percentWidth(0.35f, table)).pad(4);
         table.row();
-        table.add(exitBtn).fillX().width(400).pad(4);
+        table.add(exitBtn).fillX().width(Value.percentWidth(0.35f, table)).pad(4);
     }
 
     @Override
