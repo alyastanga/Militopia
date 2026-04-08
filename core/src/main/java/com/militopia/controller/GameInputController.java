@@ -479,6 +479,7 @@ public class GameInputController extends InputAdapter {
     }
 
     private void executeTargetingAbility(int tx, int ty) {
+        // LAUNCH_NUKE logic removed as it is no longer supported by CombatSystem
         isTargetingAbility = false;
         targetingAbilityKey = null;
         targetingUnit = null;
