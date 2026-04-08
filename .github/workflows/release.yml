@@ -1,0 +1,174 @@
+name: Create Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.head_commit.message, 'release:')
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Bump patch version
+        id: version
+        run: |
+          LATEST_TAG=$(git tag --sort=-v:refname | grep "^v" | head -1)
+          if [ -z "$LATEST_TAG" ]; then
+            NEW_TAG="v1.0.0"
+          else
+            MAJOR=$(echo $LATEST_TAG | cut -d. -f1 | tr -d 'v')
+            MINOR=$(echo $LATEST_TAG | cut -d. -f2)
+            PATCH=$(echo $LATEST_TAG | cut -d. -f3)
+            NEW_TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+          VERSION_NUM="${NEW_TAG#v}"
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "version_num=$VERSION_NUM" >> $GITHUB_OUTPUT
+
+      - name: Extract release subtitle
+        id: title
+        run: |
+          SUBTITLE=$(echo "${{ github.event.head_commit.message }}" | sed 's/^release: //' | head -1)
+          echo "subtitle=$SUBTITLE" >> $GITHUB_OUTPUT
+
+      - name: Update projectVersion in gradle.properties
+        run: |
+          sed -i "s/projectVersion=.*/projectVersion=${{ steps.version.outputs.version_num }}/" gradle.properties
+
+      - name: Build universal JAR
+        run: ./gradlew lwjgl3:jar
+
+      - name: Build Windows package
+        run: ./gradlew lwjgl3:packageWinX64
+
+      - name: Build macOS ARM package
+        run: ./gradlew lwjgl3:packageMacM1
+
+      - name: Collect artifacts
+        run: |
+          NEW_TAG="${{ steps.version.outputs.new_tag }}"
+          VERSION_NUM="${{ steps.version.outputs.version_num }}"
+          cp lwjgl3/build/libs/Militopia-${VERSION_NUM}.jar Militopia-${NEW_TAG}-universal.jar
+          cp lwjgl3/build/construo/winX64/Militopia.zip Militopia-${NEW_TAG}-windows.zip
+          cp lwjgl3/build/construo/macM1/Militopia.zip Militopia-${NEW_TAG}-mac-arm64.zip
+
+      - name: Generate AI release notes
+        id: ai_notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_TAG="${{ steps.version.outputs.new_tag }}"
+          LATEST_TAG="${{ steps.version.outputs.latest_tag }}"
+          SUBTITLE="${{ steps.title.outputs.subtitle }}"
+
+          if [ -z "$LATEST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"%s" | grep -v "^release:" | head -20)
+          else
+            COMMITS=$(git log ${LATEST_TAG}..HEAD --pretty=format:"%s" | grep -v "^release:")
+          fi
+
+          python3 - <<PYEOF
+          import urllib.request, json, os
+
+          commits = """${COMMITS}"""
+          subtitle = "${SUBTITLE}"
+          version = "${NEW_TAG}"
+
+          prompt = f"""You are writing release notes for Militopia, a turn-based strategy game.
+
+          Version: {version}
+          Release title: {subtitle}
+
+          Raw commits since last release:
+          {commits}
+
+          Write a concise "What's changed" section for the release notes.
+          - Group related changes together if possible
+          - Use plain bullet points (- )
+          - Be player-friendly, not technical jargon
+          - Keep it short and clear
+          - Do not include a header, just the bullet points"""
+
+          payload = json.dumps({
+            "model": "gpt-4o-mini",
+            "messages": [{"role": "user", "content": prompt}]
+          }).encode()
+
+          req = urllib.request.Request(
+            "https://models.inference.ai.azure.com/chat/completions",
+            data=payload,
+            headers={
+              "Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}",
+              "content-type": "application/json"
+            }
+          )
+
+          with urllib.request.urlopen(req) as res:
+            body = json.loads(res.read())
+            summary = body["choices"][0]["message"]["content"]
+
+          with open("whats_changed.txt", "w") as f:
+            f.write(summary)
+
+          print("AI summary generated.")
+          PYEOF
+
+      - name: Build release notes
+        run: |
+          NEW_TAG="${{ steps.version.outputs.new_tag }}"
+          SUBTITLE="${{ steps.title.outputs.subtitle }}"
+          WHATS_CHANGED=$(cat whats_changed.txt)
+
+          cat > release_notes.md <<EOF
+          ## Militopia ${NEW_TAG} — ${SUBTITLE}
+
+          ### What's changed
+          ${WHATS_CHANGED}
+
+          ### Downloads
+
+          | File | Platform | Requirements |
+          |------|----------|--------------|
+          | \`Militopia-${NEW_TAG}-windows.zip\` | Windows 64-bit | None — Java bundled |
+          | \`Militopia-${NEW_TAG}-mac-arm64.zip\` | macOS Apple Silicon (M1/M2/M3) | None — Java bundled |
+          | \`Militopia-${NEW_TAG}-universal.jar\` | Windows / macOS / Linux | Java 8+ required |
+
+          ### How to run
+
+          **Windows** — Extract zip → open \`roast\` folder → double-click \`Militopia.exe\`
+
+          **macOS** — Extract zip → right-click \`Militopia.app\` → Open
+
+          **JAR** — \`java -jar Militopia-${NEW_TAG}-universal.jar\`
+          EOF
+
+      - name: Create tag
+        run: |
+          git tag ${{ steps.version.outputs.new_tag }}
+          git push origin ${{ steps.version.outputs.new_tag }}
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_TAG="${{ steps.version.outputs.new_tag }}"
+          SUBTITLE="${{ steps.title.outputs.subtitle }}"
+          gh release create "$NEW_TAG" \
+            --title "Militopia ${NEW_TAG} — ${SUBTITLE}" \
+            --notes-file release_notes.md \
+            Militopia-${NEW_TAG}-windows.zip \
+            Militopia-${NEW_TAG}-mac-arm64.zip \
+            Militopia-${NEW_TAG}-universal.jar

@@ -307,44 +307,8 @@ public class StructureEconomySystem extends EntitySystem {
         return total;
     }
 
-    /** Total maintenance expenses for a player across all owned units. */
-    public int calculateMaintenance(int playerID) {
-        int total = 0;
-        ImmutableArray<Entity> entities = getEngine().getEntitiesFor(
-                Family.all(StatsComponent.class, TypeComponent.class).get());
-        for (int i = 0; i < entities.size(); i++) {
-            Entity entity = entities.get(i);
-            StatsComponent stats = entity.getComponent(StatsComponent.class);
-            TypeComponent type = entity.getComponent(TypeComponent.class);
-            if (stats.owner == playerID && type.type == TypeComponent.Type.UNIT) {
-                total += getUnitMaintenance(stats.unitType);
-            }
-        }
-        return total;
-    }
-
-    /** Helper to determine per-unit maintenance cost. */
-    private int getUnitMaintenance(com.militopia.config.UnitType type) {
-        if (type == null) return 1;
-        switch (type) {
-            case TANK:
-            case DESTROYER:
-            case APACHE:
-                return 3;
-            case CARRIER:
-            case B2:
-            case SUBMARINE:
-                return 5;
-            case JUGGERNAUT:
-                return 0; // Protagonist/Super units are free
-            default:
-                return 1;
-        }
-    }
-
-    /** Returns Net Income (Gross - Maintenance). */
     public int calculateNetIncome(int playerID) {
-        return calculateIncome(playerID) - calculateMaintenance(playerID);
+        return calculateIncome(playerID);
     }
 
     /**

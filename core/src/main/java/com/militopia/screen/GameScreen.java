@@ -638,17 +638,13 @@ public class GameScreen implements Screen {
         sb.append("========================================\n");
 
         int p1Inc = calculateIncome(1);
-        int p1Maint = structureEconomySystem.calculateMaintenance(1);
         int p2Inc = calculateIncome(2);
-        int p2Maint = structureEconomySystem.calculateMaintenance(2);
 
-        sb.append(String.format("%-15s | Funds: %3d | Inc: +%d | Maint: -%d | Net: %s%d\n",
-                gameState.p1Name.toUpperCase(), gameState.p1Funding, p1Inc, p1Maint,
-                (p1Inc - p1Maint >= 0 ? "+" : ""), (p1Inc - p1Maint)));
+        sb.append(String.format("%-15s | Funds: %3d | Inc: +%d\n",
+                gameState.p1Name.toUpperCase(), gameState.p1Funding, p1Inc));
 
-        sb.append(String.format("%-15s | Funds: %3d | Inc: +%d | Maint: -%d | Net: %s%d\n",
-                gameState.p2Name.toUpperCase(), gameState.p2Funding, p2Inc, p2Maint,
-                (p2Inc - p2Maint >= 0 ? "+" : ""), (p2Inc - p2Maint)));
+        sb.append(String.format("%-15s | Funds: %3d | Inc: +%d\n",
+                gameState.p2Name.toUpperCase(), gameState.p2Funding, p2Inc));
 
         sb.append("----------------------------------------\n");
         sb.append("ACTIVE PLAYER : ")
@@ -713,8 +709,7 @@ public class GameScreen implements Screen {
      */
     private void startActiveTurn() {
         int grossIncome = calculateIncome(gameState.currentPlayer);
-        int maintenance = structureEconomySystem.calculateMaintenance(gameState.currentPlayer);
-        int netIncome = Math.max(0, grossIncome - maintenance);
+        int netIncome = grossIncome;
 
         // XP distribution, Hospital healing, and base leveling
         int xpGain = structureEconomySystem.processTurn(gameState.currentPlayer);
@@ -737,9 +732,6 @@ public class GameScreen implements Screen {
                         .getIncomeBreakdown(gameState.currentPlayer);
                 LinkedHashMap<String, Integer> xpBreakdown = structureEconomySystem
                         .getXPBreakdown(gameState.currentPlayer);
-
-                // Add maintenance to breakdown for transparency
-                incomeBreakdown.put("Unit Maintenance", -maintenance);
 
                 AudioManager.getInstance().playSFX(com.militopia.managers.SFXKeys.UI_NOTIFICATION);
                 gameHUD.showEconomyPopup(gameState.turnCount, netIncome, xpGain, currentTotal, incomeBreakdown,
