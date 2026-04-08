@@ -37,6 +37,7 @@ public class HudBottomBar {
 
     private Table bottomContainer;
     private Table settingsOverlay;
+    private TutorialCompletePopup tutorialCompletePopup;
 
     private Label waitingLabel;
     private Table actionTable; // Holds settings, stats, endTurn for easy toggle
@@ -54,6 +55,7 @@ public class HudBottomBar {
 
         buildBottomBar(screen, stage);
         buildSettingsOverlay(screen, stage);
+        tutorialCompletePopup = new TutorialCompletePopup(game, screen, stage, inputController, this);
     }
 
     // -------------------------------------------------------------------------
@@ -160,6 +162,51 @@ public class HudBottomBar {
                 screen.endTurnAction();
                 // Note: endTurnAction plays TURN_END_PLAYER internally
 
+                // Tutorial Hook: End Turn (refresh after summon)
+                if (com.militopia.managers.TutorialManager.getInstance().isActive() && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.END_TURN_REFRESH) {
+                    com.militopia.managers.TutorialManager.getInstance().nextStep();
+                }
+
+                // Tutorial Hook: End Turn (hold town before capture)
+                if (com.militopia.managers.TutorialManager.getInstance().isActive() && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.END_TURN_CAPTURE) {
+                    com.militopia.managers.TutorialManager.getInstance().nextStep();
+                }
+
+                // Tutorial Hook: End Turn (before cut tree)
+                if (com.militopia.managers.TutorialManager.getInstance().isActive() && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.END_TURN_CUT) {
+                    com.militopia.managers.TutorialManager.getInstance().nextStep();
+                }
+
+                // Tutorial Hook: End Turn (after cut tree, before moving to deer)
+                if (com.militopia.managers.TutorialManager.getInstance().isActive() && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.END_TURN_BEFORE_DEER) {
+                    com.militopia.managers.TutorialManager.getInstance().nextStep();
+                }
+
+                // Tutorial Hook: End Turn (before hunt)
+                if (com.militopia.managers.TutorialManager.getInstance().isActive() && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.END_TURN_HUNT) {
+                    com.militopia.managers.TutorialManager.getInstance().nextStep();
+                }
+
+                // Tutorial Hook: End Turn (after hunt, before moving to attack)
+                if (com.militopia.managers.TutorialManager.getInstance().isActive() && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.END_TURN_BEFORE_ATTACK) {
+                    com.militopia.managers.TutorialManager.getInstance().nextStep();
+                }
+
+                // Tutorial Hook: End Turn (before attack)
+                if (com.militopia.managers.TutorialManager.getInstance().isActive() && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.END_TURN_ATTACK) {
+                    com.militopia.managers.TutorialManager.getInstance().nextStep();
+                }
+
+                // Tutorial Hook: End Turn (after attack, before moving to ruins)
+                if (com.militopia.managers.TutorialManager.getInstance().isActive() && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.END_TURN_BEFORE_RUINS) {
+                    com.militopia.managers.TutorialManager.getInstance().nextStep();
+                }
+
+                // Tutorial Hook: End Turn (before scavenge)
+                if (com.militopia.managers.TutorialManager.getInstance().isActive() && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.END_TURN_SCAVENGE) {
+                    com.militopia.managers.TutorialManager.getInstance().nextStep();
+                }
+
                 // Tutorial Hook: End Turn
                 if (com.militopia.managers.TutorialManager.getInstance().isActive() && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.END_TURN) {
                     com.militopia.managers.TutorialManager.getInstance().nextStep();
@@ -203,12 +250,17 @@ public class HudBottomBar {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 AudioManager.getInstance().playSFX(SFXKeys.UI_CLICK_CANCEL);
-                screen.saveAndExit();
 
-                // Tutorial Hook: Save & Exit
-                if (com.militopia.managers.TutorialManager.getInstance().isActive() && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.SAVE_EXIT) {
+                // Tutorial Hook: Save & Exit — show congratulations instead of exiting immediately
+                if (com.militopia.managers.TutorialManager.getInstance().isActive()
+                        && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.SAVE_EXIT) {
                     com.militopia.managers.TutorialManager.getInstance().nextStep();
+                    settingsOverlay.setVisible(false);
+                    tutorialCompletePopup.show();
+                    return;
                 }
+
+                screen.saveAndExit();
             }
         });
 

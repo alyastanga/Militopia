@@ -25,13 +25,21 @@ public class AnimationSystem extends IteratingSystem {
 
         anim.stateTime += deltaTime;
 
-        if (anim.stateTime >= anim.duration) {
-            pos.visualOffsetX = 0;
-            pos.visualOffsetY = 0;
-            if (anim.type == AnimationComponent.Type.JUMP) {
+        // Landing trigger: fires when the arc Y drops to near-zero on the descent side
+        if (anim.type == AnimationComponent.Type.JUMP && anim.arcDuration > 0 && !anim.landingFired) {
+            float arcProgress = anim.stateTime / anim.arcDuration;
+            boolean descending = arcProgress > 0.5f;
+            float arcY = anim.arcHeight * (float) Math.sin(arcProgress * Math.PI);
+            if (descending && arcY <= com.militopia.config.CombatConstants.JUMP_LANDING_THRESHOLD) {
+                anim.landingFired = true;
                 JumpLandingComponent jlc = entity.getComponent(JumpLandingComponent.class);
                 if (jlc != null) jlc.landed = true;
             }
+        }
+
+        if (anim.stateTime >= anim.duration) {
+            pos.visualOffsetX = 0;
+            pos.visualOffsetY = 0;
             anim.type = AnimationComponent.Type.NONE;
             return;
         }
@@ -72,12 +80,13 @@ public class AnimationSystem extends IteratingSystem {
     }
 
     private void updateJump(AnimationComponent anim, GridPositionComponent pos, float progress) {
-        // Linear XY travel from source to destination + parabolic arc
-        // jumpStartOff is the negative of the travel delta (so at progress=0 we appear at source)
-        pos.visualOffsetX = anim.jumpStartOffX * (1 - progress);
-        // sin(progress * PI) traces a parabolic arc: 0 at start, peaks at 1 at midpoint, 0 at end.
-        // Multiplied by arcHeight to control the peak altitude of the jump.
-        pos.visualOffsetY = anim.jumpStartOffY * (1 - progress)
-                + anim.arcHeight * (float) Math.sin(progress * Math.PI);
+        // Arc progress is clamped to 1 so the juggernaut stays at the landing position
+        // during post-landing sprite frames (arcDuration < duration).
+        float arcProgress = (anim.arcDuration > 0)
+                ? Math.min(anim.stateTime / anim.arcDuration, 1f)
+                : progress;
+        pos.visualOffsetX = anim.jumpStartOffX * (1 - arcProgress);
+        pos.visualOffsetY = anim.jumpStartOffY * (1 - arcProgress)
+                + anim.arcHeight * (float) Math.sin(arcProgress * Math.PI);
     }
 }

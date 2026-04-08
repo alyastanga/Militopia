@@ -1,0 +1,20 @@
+{
+  "units": {
+    "RECRUIT":       "Dig In: +3 Def for 1 turn",
+    "RANGER":        "Overwatch: Auto-attacks enemy entering range",
+    "SNIPER":        "Camouflage: Invisible in Forest/Ruins",
+    "TANK":          "Blitz: Move again on lethal kill",
+    "JUGGERNAUT":    "Jump Strike: Leaps to target tile; AoE damage on landing",
+    "RECON_DRONE":   "High Altitude: Immune to melee land attacks",
+    "SUICIDE_DRONE": "Kamikaze: Dies after attacking",
+    "APACHE":        "Fuel Gauge: Crashes after 5 turns unfueled",
+    "B2":            "Stealth Cloak: Invisible until it attacks",
+    "GUNBOAT":       "Skirmish: Move 1 tile after attacking",
+    "DESTROYER":     "Shore Bombardment: +5 dmg vs Land units",
+    "CARRIER":       "Mobile Airfield: Heals+refuels adjacent air",
+    "SUBMARINE":     "Deep Dive: Cloaked; Nuke on 3-turn cooldown"
+  },
+  "structures": {
+    "HOSPITAL": "Field Hospital: Heals adjacent units +3 HP at turn start"
+  }
+}

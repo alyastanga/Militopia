@@ -3,6 +3,7 @@ package com.militopia.systems;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.PooledEngine;
 import com.militopia.components.StatsComponent;
+import com.militopia.config.StructureType;
 import com.militopia.data.GameState;
 import com.militopia.factories.UnitFactory;
 import com.militopia.map.MapGenerator;
@@ -32,6 +33,8 @@ public class StructurePlacementSystem {
      */
     public boolean canBuild(String struct, int x, int y, int owner, int cost, boolean isWater, boolean isCoastalWater,
             boolean isCoastalLand) {
+        StructureType structureType = StructureType.fromKey(struct);
+
         int funds = (owner == 1) ? gameState.p1Funding : gameState.p2Funding;
         if (funds < cost) {
             GameLogger.log(GameLogger.BUILD, owner,
@@ -43,13 +46,13 @@ public class StructurePlacementSystem {
         boolean isOilTile = (existingObj == MapGenerator.ObjectType.OIL);
 
         if (isOilTile) {
-            if (!struct.equals("OIL_DERRICK")) {
+            if (structureType != StructureType.OIL_DERRICK) {
                 GameLogger.log(GameLogger.BUILD, owner,
                         "Build " + struct + " at " + GameLogger.pos(x, y) + " — BLOCKED (must be OIL_DERRICK on Oil)");
                 return false;
             }
         } else {
-            if (struct.equals("OIL_DERRICK")) {
+            if (structureType == StructureType.OIL_DERRICK) {
                 GameLogger.log(GameLogger.BUILD, owner,
                         "Build " + struct + " at " + GameLogger.pos(x, y) + " — BLOCKED (must be Oil Reservoir)");
                 return false;
@@ -62,13 +65,13 @@ public class StructurePlacementSystem {
         }
 
         // Terrain constraints
-        if (struct.equals("PORT")) {
+        if (structureType == StructureType.PORT) {
             if (!isWater || !isCoastalWater)
                 return false;
-        } else if (struct.equals("NUCLEAR")) {
+        } else if (structureType == StructureType.NUCLEAR_PLANT) {
             if (isWater || !isCoastalLand)
                 return false;
-        } else if (struct.equals("OIL_DERRICK")) {
+        } else if (structureType == StructureType.OIL_DERRICK) {
             // Oil Derricks allowed on both land and water (offshore drilling)
             // as long as there is an Oil Reservoir (checked earlier in this method)
         } else {
@@ -80,8 +83,8 @@ public class StructurePlacementSystem {
         Entity existingAtLayer1 = factory.getEntityAt(x, y, 1);
         if (existingAtLayer1 != null) {
             StatsComponent stats = existingAtLayer1.getComponent(StatsComponent.class);
-            boolean isOilRes = (stats != null && stats.name.equals("Oil Reservoir"));
-            if (!(struct.equals("OIL_DERRICK") && isOilRes)) {
+            boolean isOilRes = (stats != null && MapGenerator.ObjectType.OIL.name().equals(stats.unitTypeKey));
+            if (!(structureType == StructureType.OIL_DERRICK && isOilRes)) {
                 GameLogger.log(GameLogger.BUILD, owner,
                         "Build " + struct + " at " + GameLogger.pos(x, y) + " — BLOCKED (tile occupied)");
                 return false;
@@ -95,9 +98,11 @@ public class StructurePlacementSystem {
      * Performs the actual building of a structure.
      */
     public void performBuild(String struct, int x, int y, int owner, int cost, int parentX, int parentY) {
+        StructureType structureType = StructureType.fromKey(struct);
+
         // Remove existing Oil Reservoir if building a derrick
         MapGenerator.ObjectType existingObj = map.objects[x][y];
-        if (struct.equals("OIL_DERRICK") && existingObj == MapGenerator.ObjectType.OIL) {
+        if (structureType == StructureType.OIL_DERRICK && existingObj == MapGenerator.ObjectType.OIL) {
             map.objects[x][y] = MapGenerator.ObjectType.NONE;
             Entity existingAtLayer1 = factory.getEntityAt(x, y, 1);
             if (existingAtLayer1 != null) {

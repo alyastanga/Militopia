@@ -100,7 +100,9 @@ public class CombatSystem extends EntitySystem {
         anim.jumpStartOffX = -dIsoX;
         anim.jumpStartOffY = -dIsoY;
         anim.arcHeight = CombatConstants.JUMP_ARC_HEIGHT;
+        anim.arcDuration = CombatConstants.JUMP_ARC_DURATION;
         anim.duration = CombatConstants.JUMP_DURATION;
+        anim.landingFired = false;
         anim.stateTime = 0;
 
         // Attach landing payload
@@ -154,7 +156,7 @@ public class CombatSystem extends EntitySystem {
         }
 
         // OIL DERRICK & NUCLEAR PLANT: Indestructible
-        StructureType dStructType = StructureType.fromDisplayName(dStats.name);
+        StructureType dStructType = StructureType.fromKey(dStats.unitTypeKey);
         if (dStructType == StructureType.OIL_DERRICK || dStructType == StructureType.NUCLEAR_PLANT) {
             GameLogger.log(GameLogger.ATTACK, aStats.owner,
                     aStats.name + " attacks indestructible " + dStats.name + " at "
@@ -276,7 +278,7 @@ public class CombatSystem extends EntitySystem {
 
         // B2 / SUBMARINE: AoE splash on primary target tile (radius 1, skip primary target)
         if (unitType == UnitType.B2 || unitType == UnitType.SUBMARINE) {
-            applyAttackBasedAoE(attacker, dPos.x, dPos.y, 1, defender);
+            applyAttackBasedAoE(attacker, dPos.x, dPos.y, CombatConstants.AOE_SPLASH_RADIUS, CombatConstants.AOE_SPLASH_DAMAGE_MULTIPLIER, defender);
         }
 
         // --- 2. Defender death? ---
@@ -381,43 +383,6 @@ public class CombatSystem extends EntitySystem {
     }
 
     /**
-     * Launches a high-yield tactical nuke from a Submarine.
-     * Deals massive AoE damage in a radius of 2.
-     *
-     * @param attacker The Submarine entity.
-     * @param tx       Target tile X.
-     * @param ty       Target tile Y.
-     */
-    public void launchNuke(Entity attacker, int tx, int ty) {
-        StatsComponent aStats = attacker.getComponent(StatsComponent.class);
-        if (aStats == null)
-            return;
-
-        GameLogger.log(GameLogger.ABILITY, aStats.owner, "NUKE LAUNCHED at " + GameLogger.pos(tx, ty));
-
-        // Visuals & Sound (Launch phase)
-        AudioManager.getInstance().playSFX(SFXKeys.ATTACK_SUBMARINE);
-
-        // Defer visuals/damage logic (simulated immediate impact for now)
-        if (entityFactory != null) {
-            entityFactory.createDramaticExplosion(tx, ty);
-        }
-        AudioManager.getInstance().playSFX(SFXKeys.ATTACK_B2); // Impact sound
-
-        // Damage (Radius 2, High Damage 50)
-        triggerExplosion(tx, ty, 2, 50, "NUKE");
-
-        // Set Cooldown
-        AbilitiesComponent abilities = attacker.getComponent(AbilitiesComponent.class);
-        if (abilities != null) {
-            abilities.nukeCooldown = 4; // it will be decremented to 3 at turn start
-            abilities.isCloakBroken = true;
-        }
-
-        exhaustAttacker(attacker, aStats, true);
-    }
-
-    /**
      * Checks if any enemy "Ranger" with Overwatch active is in range of the moving
      * unit.
      */
@@ -501,7 +466,7 @@ public class CombatSystem extends EntitySystem {
         }
 
         // --- NEW: Track Base Destruction ---
-        if (StructureType.fromDisplayName(stats.name) == StructureType.BASE) {
+        if (stats.unitTypeKey != null && stats.unitTypeKey.startsWith("BASE")) {
             if (stats.owner == 1) {
                 gameState.p1BaseCount = Math.max(0, gameState.p1BaseCount - 1);
             } else if (stats.owner == 2) {
@@ -532,7 +497,7 @@ public class CombatSystem extends EntitySystem {
 
             if (chebyshev(centerX, centerY, vPos.x, vPos.y) <= radius) {
                 // OIL DERRICK & NUCLEAR PLANT: Indestructible
-                StructureType vStructType = StructureType.fromDisplayName(vStats.name);
+                StructureType vStructType = StructureType.fromKey(vStats.unitTypeKey);
                 if (vStructType == StructureType.OIL_DERRICK || vStructType == StructureType.NUCLEAR_PLANT) {
                     continue;
                 }
@@ -614,17 +579,31 @@ public class CombatSystem extends EntitySystem {
         StatsComponent aStats = jumper.getComponent(StatsComponent.class);
         if (landPos == null || aStats == null) return;
 
-        // 1. Instantly kill primary target
+        // 1. Resolve primary target — instant kill for normal units, damage + bounce for super units
+        boolean superUnitSurvived = false;
+
         if (jlc.primaryTarget != null) {
             StatsComponent tStats = jlc.primaryTarget.getComponent(StatsComponent.class);
             if (tStats != null && tStats.currentHP > 0) {
-                tStats.currentHP = 0;
-                flagDeath(jlc.primaryTarget);
+                if (isSuperUnit(tStats.unitType)) {
+                    int dmg = (int)(aStats.attack * CombatConstants.JUMP_SUPER_UNIT_DAMAGE_MULTIPLIER);
+                    tStats.currentHP = Math.max(0, tStats.currentHP - dmg);
+                    spawnFloatingText(dmg, landPos.x, landPos.y, false);
+                    if (tStats.currentHP <= 0) {
+                        tStats.currentHP = 0;
+                        flagDeath(jlc.primaryTarget);
+                    } else {
+                        superUnitSurvived = true;
+                    }
+                } else {
+                    tStats.currentHP = 0;
+                    flagDeath(jlc.primaryTarget);
+                }
             }
         }
         entityFactory.createExplosion(landPos.x, landPos.y);
 
-        // 2. AoE damage to adjacent enemies on landing
+        // 2. AoE damage to adjacent enemies on landing (fires BEFORE bounce so freed tiles are available)
         resolveJumpLandingAoE(jumper, landPos.x, landPos.y, jlc.primaryTarget);
 
         // 3. Dramatic explosion sequence exactly on landing
@@ -633,12 +612,21 @@ public class CombatSystem extends EntitySystem {
         // 4. SFX on landing
         AudioManager.getInstance().playSFX(SFXKeys.ATTACK_JUGGERNAUT);
 
+        // 5. Bounce — relocate Juggernaut when super unit survived the landing
+        if (superUnitSurvived) {
+            int[] bounce = findNearestFreeTile(landPos.x, landPos.y);
+            if (bounce != null) {
+                landPos.x = bounce[0];
+                landPos.y = bounce[1];
+            }
+        }
+
         GameLogger.log(GameLogger.ABILITY, aStats.owner,
                 "Juggernaut LANDED at " + GameLogger.pos(landPos.x, landPos.y));
     }
 
     private void resolveJumpLandingAoE(Entity jumper, int cx, int cy, Entity skipTarget) {
-        applyAttackBasedAoE(jumper, cx, cy, 1, skipTarget);
+        applyAttackBasedAoE(jumper, cx, cy, CombatConstants.AOE_SPLASH_RADIUS, 1.0f, skipTarget);
     }
 
     /**
@@ -646,7 +634,7 @@ public class CombatSystem extends EntitySystem {
      * ({@code cx}, {@code cy}). Skips the attacker, any additional {@code skipEntities}, friendly
      * units, and indestructible structures (Oil Derrick, Nuclear Plant).
      */
-    private void applyAttackBasedAoE(Entity attacker, int cx, int cy, int radius, Entity... skipEntities) {
+    private void applyAttackBasedAoE(Entity attacker, int cx, int cy, int radius, float multiplier, Entity... skipEntities) {
         StatsComponent aStats = attacker.getComponent(StatsComponent.class);
         ImmutableArray<Entity> entities = engine.getEntitiesFor(
                 Family.all(GridPositionComponent.class, StatsComponent.class).get());
@@ -668,7 +656,7 @@ public class CombatSystem extends EntitySystem {
             int defBonus = terrainDefBonus(p.x, p.y);
             AbilitiesComponent dAbilities = e.getComponent(AbilitiesComponent.class);
             int digInBonus = (dAbilities != null && dAbilities.isDiggingIn) ? CombatConstants.DIG_IN_DEFENSE_BONUS : 0;
-            int dmg = Math.max(0, aStats.attack - (s.defense + digInBonus) - defBonus);
+            int dmg = Math.max(0, (int)((aStats.attack - (s.defense + digInBonus) - defBonus) * multiplier));
             s.currentHP -= dmg;
             spawnFloatingText(dmg, p.x, p.y, false);
             if (s.currentHP <= 0) {
@@ -691,6 +679,34 @@ public class CombatSystem extends EntitySystem {
         float worldX = EntityFactory.gridToIsoX(gx, gy);
         float worldY = EntityFactory.gridToIsoY(gx, gy);
         entityFactory.createFloatingText(label, worldX, worldY, type);
+    }
+
+    private boolean isSuperUnit(UnitType type) {
+        return type == UnitType.JUGGERNAUT || type == UnitType.B2 || type == UnitType.SUBMARINE;
+    }
+
+    private int[] findNearestFreeTile(int cx, int cy) {
+        ImmutableArray<Entity> entities = engine.getEntitiesFor(
+                Family.all(GridPositionComponent.class).get());
+        for (int radius = 1; radius <= CombatConstants.NEAREST_FREE_TILE_MAX_RADIUS; radius++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dy = -radius; dy <= radius; dy++) {
+                    if (Math.abs(dx) != radius && Math.abs(dy) != radius) continue; // perimeter only
+                    int tx = cx + dx, ty = cy + dy;
+                    if (tx < 0 || ty < 0) continue;
+                    boolean occupied = false;
+                    for (Entity e : entities) {
+                        GridPositionComponent p = e.getComponent(GridPositionComponent.class);
+                        if (p.x == tx && p.y == ty && p.zIndex == 3) {
+                            occupied = true;
+                            break;
+                        }
+                    }
+                    if (!occupied) return new int[]{tx, ty};
+                }
+            }
+        }
+        return null;
     }
 
     private void triggerAttackAnimation(Entity attacker, Entity defender) {

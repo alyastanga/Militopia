@@ -64,27 +64,8 @@ public class InfoPanel {
     private Table infoStack;
     private Label atkLabel, defLabel, rngLabel, movLabel, visLabel;
 
-    private static final java.util.Map<UnitType, String> ABILITY_DESC;
-    private static final java.util.Map<StructureType, String> STRUCTURE_DESC;
-    static {
-        ABILITY_DESC = new java.util.EnumMap<UnitType, String>(UnitType.class);
-        ABILITY_DESC.put(UnitType.RECRUIT, "Dig In: +3 Def for 1 turn");
-        ABILITY_DESC.put(UnitType.RANGER, "Overwatch: Auto-attacks enemy entering range");
-        ABILITY_DESC.put(UnitType.SNIPER, "Camouflage: Invisible in Forest/Ruins");
-        ABILITY_DESC.put(UnitType.TANK, "Blitz: Move again on lethal kill");
-        ABILITY_DESC.put(UnitType.JUGGERNAUT, "Jump Strike: Leaps to target tile; AoE damage on landing");
-        ABILITY_DESC.put(UnitType.RECON_DRONE, "High Altitude: Immune to melee land attacks");
-        ABILITY_DESC.put(UnitType.SUICIDE_DRONE, "Kamikaze: Dies after attacking");
-        ABILITY_DESC.put(UnitType.APACHE, "Fuel Gauge: Crashes after 5 turns unfueled");
-        ABILITY_DESC.put(UnitType.B2, "Stealth Cloak: Invisible until it attacks");
-        ABILITY_DESC.put(UnitType.GUNBOAT, "Skirmish: Move 1 tile after attacking");
-        ABILITY_DESC.put(UnitType.DESTROYER, "Shore Bombardment: +5 dmg vs Land units");
-        ABILITY_DESC.put(UnitType.CARRIER, "Mobile Airfield: Heals+refuels adjacent air");
-        ABILITY_DESC.put(UnitType.SUBMARINE, "Deep Dive: Cloaked; Nuke on 3-turn cooldown");
-
-        STRUCTURE_DESC = new java.util.EnumMap<StructureType, String>(StructureType.class);
-        STRUCTURE_DESC.put(StructureType.HOSPITAL, "Field Hospital: Heals adjacent units +3 HP at turn start");
-    }
+    private final java.util.Map<UnitType, String> abilityDesc = new java.util.EnumMap<>(UnitType.class);
+    private final java.util.Map<StructureType, String> structureDesc = new java.util.EnumMap<>(StructureType.class);
 
     // Base specific labels
     private Label levelLabel;
@@ -96,6 +77,16 @@ public class InfoPanel {
         this.assets = assets;
         this.stage = stage;
         this.bottomBar = bottomBar;
+        com.badlogic.gdx.utils.JsonValue root = new com.badlogic.gdx.utils.JsonReader()
+                .parse(com.badlogic.gdx.Gdx.files.internal("game-system/ability_descriptions.json"));
+        for (com.badlogic.gdx.utils.JsonValue entry : root.get("units")) {
+            UnitType ut = UnitType.fromKey(entry.name);
+            if (ut != null) abilityDesc.put(ut, entry.asString());
+        }
+        for (com.badlogic.gdx.utils.JsonValue entry : root.get("structures")) {
+            StructureType st = StructureType.fromKey(entry.name);
+            if (st != null) structureDesc.put(st, entry.asString());
+        }
         build();
     }
 
@@ -162,7 +153,7 @@ public class InfoPanel {
 
         StatsComponent stats = base.getComponent(StatsComponent.class);
         if (stats != null && statsTable != null) {
-            boolean isBase = StructureType.fromDisplayName(stats.name) == StructureType.BASE;
+            boolean isBase = stats.unitTypeKey != null && stats.unitTypeKey.startsWith("BASE");
 
             // Level line: only for bases
             if (isBase) {
@@ -212,8 +203,8 @@ public class InfoPanel {
 
             // Structure description
             if (abilityDescLabel != null) {
-                StructureType sType = StructureType.fromDisplayName(stats.name);
-                String desc = STRUCTURE_DESC.get(sType);
+                StructureType sType = StructureType.fromKey(stats.unitTypeKey);
+                String desc = structureDesc.get(sType);
                 if (desc != null) {
                     abilityDescLabel.setText(desc);
                     abilityDescLabel.setVisible(true);
@@ -338,6 +329,13 @@ public class InfoPanel {
                             screen.gameHUD.updateFunding(bs.owner, remaining, bs.income);
                             hideTileInfo();
                             controller.resetLastClicked();
+
+                            // Tutorial Hook: Summon Unit
+                            if (com.militopia.managers.TutorialManager.getInstance().isActive()
+                                    && com.militopia.managers.TutorialManager.getInstance()
+                                            .getCurrentStep() == com.militopia.managers.TutorialManager.Step.SUMMON_UNIT) {
+                                com.militopia.managers.TutorialManager.getInstance().nextStep();
+                            }
                         }
                     });
         }
@@ -439,7 +437,7 @@ public class InfoPanel {
 
         // Ability description
         if (abilityDescLabel != null && stats != null) {
-            String desc = ABILITY_DESC.get(stats.unitType);
+            String desc = abilityDesc.get(stats.unitType);
             if (desc != null) {
                 abilityDescLabel.setText(desc);
                 abilityDescLabel.setVisible(true);
@@ -464,7 +462,7 @@ public class InfoPanel {
                         new ClickListener() {
                             @Override
                             public void clicked(InputEvent event, float x, float y) {
-                                controller.performAbility(unit, "DIG_IN");
+                                controller.performAbility(unit, AbilitiesComponent.KEY_DIG_IN);
                             }
                         });
 
@@ -474,7 +472,7 @@ public class InfoPanel {
                         new ClickListener() {
                             @Override
                             public void clicked(InputEvent event, float x, float y) {
-                                controller.performAbility(unit, "OVERWATCH");
+                                controller.performAbility(unit, AbilitiesComponent.KEY_OVERWATCH);
                             }
                         });
             }

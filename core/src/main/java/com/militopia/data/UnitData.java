@@ -19,6 +19,7 @@ public class UnitData {
     public boolean isUnreachable;
     public int fuel;
     public int nukeCooldown;
+    public float idleTimer = 0f;
 
     // Default constructor for JSON
     public UnitData() {

@@ -9,28 +9,29 @@
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Screenshots](#screenshots)
-3. [Getting Started](#getting-started)
-4. [LAN Multiplayer](#lan-multiplayer)
-5. [Controls](#controls)
-6. [Gameplay at a Glance](#gameplay-at-a-glance)
-7. [The Map](#the-map)
-8. [Turn System](#turn-system)
-9. [Economy](#economy)
-10. [Base Progression](#base-progression)
-11. [Units](#units)
-12. [Unit Abilities](#unit-abilities)
-13. [Structures](#structures)
-14. [Combat](#combat)
-15. [Capture Mechanics](#capture-mechanics)
-16. [Fog of War](#fog-of-war)
-17. [Ruins (Scavenging)](#ruins-scavenging)
-18. [Save & Load](#save--load)
-19. [HUD](#hud)
-20. [Tech Stack](#tech-stack)
-21. [Developer Notes](#developer-notes)
-22. [Roadmap](#roadmap)
-23. [License](#license)
+2. [Download](#download)
+3. [Screenshots](#screenshots)
+4. [Getting Started](#getting-started)
+5. [LAN Multiplayer](#lan-multiplayer)
+6. [Controls](#controls)
+7. [Gameplay at a Glance](#gameplay-at-a-glance)
+8. [The Map](#the-map)
+9. [Turn System](#turn-system)
+10. [Economy](#economy)
+11. [Base Progression](#base-progression)
+12. [Units](#units)
+13. [Unit Abilities](#unit-abilities)
+14. [Structures](#structures)
+15. [Combat](#combat)
+16. [Capture Mechanics](#capture-mechanics)
+17. [Fog of War](#fog-of-war)
+18. [Ruins (Scavenging)](#ruins-scavenging)
+19. [Save & Load](#save--load)
+20. [HUD](#hud)
+21. [Tech Stack](#tech-stack)
+22. [Developer Notes](#developer-notes)
+23. [Roadmap](#roadmap)
+24. [License](#license)
 
 ---
 
@@ -42,6 +43,35 @@ The game features a tactically deep combat system with Fog of War, base progress
 
 ---
 
+## Download
+
+Grab the latest release from the [Releases page](https://github.com/Hanzm10/Militopia/releases/latest).
+
+| File | Platform | Requirements |
+|------|----------|--------------|
+| `Militopia-v1.0.0-windows.zip` | Windows 64-bit | None — Java bundled |
+| `Militopia-v1.0.0-mac-arm64.zip` | macOS Apple Silicon (M1/M2/M3) | None — Java bundled |
+| `Militopia-v1.0.0-universal.jar` | Windows / macOS / Linux | Java 8+ required |
+
+### Running the pre-built release
+
+**Windows**
+1. Download and extract `Militopia-v1.0.0-windows.zip`
+2. Open the `roast` folder
+3. Double-click `Militopia.exe`
+
+**macOS (Apple Silicon)**
+1. Download and extract `Militopia-v1.0.0-mac-arm64.zip`
+2. Right-click `Militopia.app` → **Open**
+3. If blocked by Gatekeeper: System Settings → Privacy & Security → **Open Anyway**
+
+**Universal JAR**
+```bash
+java -jar Militopia-v1.0.0-universal.jar
+```
+
+---
+
 ## Screenshots
 
 > Screenshots coming soon.
@@ -50,7 +80,9 @@ The game features a tactically deep combat system with Fog of War, base progress
 
 ## Getting Started
 
-### Prerequisites
+> Want to just play? See [Download](#download) above.
+
+### Prerequisites (building from source)
 
 - **Java 8+** (or Java 17) installed and on your `PATH`.
 
@@ -63,7 +95,7 @@ java -version
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Hanzm10/Militopia.git
 cd Militopia
 ```
 
@@ -77,17 +109,22 @@ gradlew.bat lwjgl3:run
 ./gradlew lwjgl3:run
 ```
 
-### 3. Build a distributable JAR
+### 3. Build a distributable
 
 ```bash
-# Windows
-gradlew.bat lwjgl3:jar
-
-# macOS / Linux
+# Cross-platform JAR (requires Java on target machine)
 ./gradlew lwjgl3:jar
+
+# Standalone bundles (Java bundled — no install needed)
+./gradlew lwjgl3:packageWinX64      # Windows
+./gradlew lwjgl3:packageMacM1       # macOS Apple Silicon
+./gradlew lwjgl3:packageMacX64      # macOS Intel
+./gradlew lwjgl3:packageLinuxX64    # Linux
 ```
 
-Output lands in `lwjgl3/build/libs/`.
+Output:
+- JAR → `lwjgl3/build/libs/`
+- Bundles → `lwjgl3/build/construo/`
 
 > **Tip:** On macOS you may need to run `chmod +x gradlew` once before the `./gradlew` commands work.
 

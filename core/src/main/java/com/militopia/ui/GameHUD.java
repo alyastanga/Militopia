@@ -96,22 +96,17 @@ public class GameHUD {
      * Builds all components and wires them to the Stage.
      * Must be called once after the game map and systems are ready.
      */
-    public void build(final GameScreen screen,
-            final GameInputController inputController,
-            final UnitFactory unitFactory,
-            final GameState state) {
-        build(screen, inputController, unitFactory, state, null);
-    }
-
     /**
      * Builds all components and wires them to the Stage.
-     * Pass a {@link TurnHistoryManager} to enable the right-panel snapshot overlay.
+     * Systems are created in GameScreen and injected here to keep lifecycle management out of the HUD.
      */
     public void build(final GameScreen screen,
             final GameInputController inputController,
             final UnitFactory unitFactory,
             final GameState state,
-            final TurnHistoryManager history) {
+            final TurnHistoryManager history,
+            final ScavengeSystem scavengeSystem,
+            final StructurePlacementSystem placementSystem) {
 
         this.screen = screen;
         this.inputController = inputController;
@@ -119,11 +114,9 @@ public class GameHUD {
         this.turnHistory = history;
         this.gameState = state;
 
-        // 1. Create components
-        this.scavengeSystem = new ScavengeSystem(screen.getEngine(), unitFactory, screen.getEntityFactory(),
-                state, screen.getGameMap());
-        this.placementSystem = new StructurePlacementSystem(screen.getEngine(), unitFactory, state,
-                screen.getGameMap());
+        // 1. Wire injected systems
+        this.scavengeSystem = scavengeSystem;
+        this.placementSystem = placementSystem;
 
         topBar = new HudTopBar(game, assets);
         bottomBar = new HudBottomBar(game, assets, screen, stage, inputController, this);

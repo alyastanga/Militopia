@@ -226,7 +226,6 @@ public class DevPanel {
         addActionBtn(content, "KILL UNIT  [CLICK MAP]", new Color(1f,0.5f,0.5f,1f),    new Runnable() { @Override public void run() { inputController.enterDevKill();         setStatus("Click unit to kill"); }});
         addActionBtn(content, "REMOVE OBJ [CLICK MAP]", new Color(1f,0.4f,0.4f,1f),    new Runnable() { @Override public void run() { inputController.enterDevRemove();       setStatus("Click object to remove"); }});
         addActionBtn(content, "SET BASE LEVEL  [CLICK]",new Color(1f,0.85f,0.4f,1f),   new Runnable() { @Override public void run() { inputController.enterDevSetBaseLevel(); setStatus("Click base to set level"); }});
-        addActionBtn(content, "RESET NUKE CDS",         Color.WHITE,                    new Runnable() { @Override public void run() { screen.devResetNukeCooldowns();         setStatus("Nuke CDs reset"); }});
         addActionBtn(content, "✕  CANCEL MODE",         new Color(0.65f,0.65f,0.65f,1f),new Runnable() { @Override public void run() { inputController.exitDevMode();         setStatus("Idle"); }});
     }
 

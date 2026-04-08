@@ -3,11 +3,15 @@ package com.militopia.systems;
 import com.badlogic.ashley.core.EntitySystem;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.militopia.config.GameConfig;
 import com.militopia.config.StructureType;
+import com.militopia.managers.AssetManager;
 import com.militopia.factories.UnitFactory;
 import com.militopia.map.MapGenerator;
 import com.militopia.components.GridPositionComponent;
@@ -29,6 +33,11 @@ public class MapRenderSystem extends EntitySystem {
     private int selectedX, selectedY;
     private int bouncingX, bouncingY;
     private float bounceTimer;
+
+    private Animation<TextureRegion> waterAnim;
+    private Animation<TextureRegion> deepWaterAnim;
+    private float globalWaterTime = 0f;
+    private float[][] waterTileOffsets;
     private int clickedX = -1, clickedY = -1;
 
     private boolean fogEnabled = true;
@@ -39,12 +48,28 @@ public class MapRenderSystem extends EntitySystem {
 
     private final List<BaseInfo> activeBases = new ArrayList<>();
 
-    public MapRenderSystem(SpriteBatch batch, UnitFactory factory, MapGenerator.GameMap map) {
+    public MapRenderSystem(SpriteBatch batch, UnitFactory factory, MapGenerator.GameMap map, AssetManager assets) {
         this.batch = batch;
         this.unitFactory = factory;
         this.gameMap = map;
         this.shapeRenderer = new ShapeRenderer();
         this.priority = 0;
+
+        TextureAtlas waterAtlas     = assets.getAtlas(AssetManager.WATER_ANIM_ATLAS);
+        TextureAtlas deepWaterAtlas = assets.getAtlas(AssetManager.DEEP_WATER_ANIM_ATLAS);
+        waterAnim     = buildWaterAnim(waterAtlas);
+        deepWaterAnim = buildWaterAnim(deepWaterAtlas);
+
+        waterTileOffsets = new float[map.width][map.height];
+        for (int x = 0; x < map.width; x++)
+            for (int y = 0; y < map.height; y++)
+                waterTileOffsets[x][y] = MathUtils.random(0f, 2f);
+    }
+
+    private Animation<TextureRegion> buildWaterAnim(TextureAtlas atlas) {
+        com.badlogic.gdx.utils.Array<TextureAtlas.AtlasRegion> regions = atlas.getRegions();
+        regions.sort((a, b) -> a.name.compareTo(b.name));
+        return new Animation<>(2f / 24f, regions, Animation.PlayMode.LOOP);
     }
 
     public void updateState(int selX, int selY, int bX, int bY, float bTimer, int cX, int cY) {
@@ -63,6 +88,8 @@ public class MapRenderSystem extends EntitySystem {
 
     @Override
     public void update(float deltaTime) {
+        globalWaterTime += deltaTime;
+
         // --- Cache active bases for territory calculation ---
         activeBases.clear();
         ImmutableArray<Entity> baseEntities = getEngine().getEntitiesFor(
@@ -73,7 +100,7 @@ public class MapRenderSystem extends EntitySystem {
                 continue;
 
             StatsComponent s = e.getComponent(StatsComponent.class);
-            if (StructureType.fromDisplayName(s.name) == StructureType.BASE && s.income >= 2) {
+            if (s.unitTypeKey != null && s.unitTypeKey.startsWith("BASE") && s.income >= 2) {
                 GridPositionComponent p = e.getComponent(GridPositionComponent.class);
                 BaseInfo bi = new BaseInfo();
                 bi.x = p.x;
@@ -108,17 +135,20 @@ public class MapRenderSystem extends EntitySystem {
         boolean isVisible = gameMap.visibleTiles[x][y];
 
         boolean isFog = fogEnabled && !isVisible;
+        MapGenerator.TerrainType terrainType = gameMap.terrain[x][y];
+        boolean isWaterTile = terrainType == MapGenerator.TerrainType.WATER || terrainType == MapGenerator.TerrainType.DEEP_WATER;
         if (isFog) {
             regionToDraw = unitFactory.fogRegion;
+        } else if (!isFog && isWaterTile) {
+            Animation<TextureRegion> anim = (terrainType == MapGenerator.TerrainType.DEEP_WATER) ? deepWaterAnim : waterAnim;
+            regionToDraw = anim.getKeyFrame(globalWaterTime + waterTileOffsets[x][y], true);
         } else {
-            regionToDraw = unitFactory.getTextureForTerrain(gameMap.terrain[x][y].ordinal());
+            regionToDraw = unitFactory.getTextureForTerrain(terrainType.ordinal());
         }
 
         if (regionToDraw != null) {
-            MapGenerator.TerrainType terrain = gameMap.terrain[x][y];
-            boolean isWater = terrain == MapGenerator.TerrainType.WATER || terrain == MapGenerator.TerrainType.DEEP_WATER;
-            float drawW = isWater ? GameConfig.DRAW_WIDTH  * GameConfig.WATER_TILE_SCALE : GameConfig.DRAW_WIDTH;
-            float drawH = isWater ? GameConfig.DRAW_HEIGHT * GameConfig.WATER_TILE_SCALE : GameConfig.DRAW_HEIGHT;
+            float drawW = isWaterTile ? GameConfig.DRAW_WIDTH  * GameConfig.WATER_TILE_SCALE : GameConfig.DRAW_WIDTH;
+            float drawH = isWaterTile ? GameConfig.DRAW_HEIGHT * GameConfig.WATER_TILE_SCALE : GameConfig.DRAW_HEIGHT;
             float drawX = isoX - xOffset - (drawW - GameConfig.DRAW_WIDTH) / 2f;
             float drawY = isoY - yOffset - (drawH - GameConfig.DRAW_HEIGHT) / 2f;
 
@@ -215,7 +245,7 @@ public class MapRenderSystem extends EntitySystem {
         batch.setBlendFunction(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE);
         batch.setColor(0.4f, 0.4f, 0.4f, 1f);
         batch.draw(t, x, y, w, h);
-        batch.setBlendFunction(com.badlogic.gdx.graphics.GL20.GL_ONE, com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
+        batch.setBlendFunction(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
         batch.setColor(Color.WHITE);
     }
 

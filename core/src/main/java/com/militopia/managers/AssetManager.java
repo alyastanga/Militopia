@@ -4,6 +4,7 @@ import com.badlogic.gdx.assets.loaders.FileHandleResolver;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
 import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader;
@@ -98,6 +99,7 @@ public class AssetManager {
     public static final String CIRCLE_UI     = "ui/circle_ui.png";
     public static final String CIRCLE_UI2    = "ui/circle_ui2.png";
     public static final String MILITOPIA_BTN = "ui/militopia-button.png";
+    public static final String MENU_PANEL    = "ui/menu-panel.png";
     public static final String INVINCIBLE_RED = "ui/INVINCIBLE_RED.png";
     public static final String INVINCIBLE_BLUE = "ui/INVINCIBLE_BLUE.png";
     public static final String RAILWAY_ICON = "ui/RAILWAY.png";
@@ -107,61 +109,35 @@ public class AssetManager {
     public static final String TEXT_LOGO     = "game-system/militopia-text-logo.png";
     public static final String SPLASH_SCREEN = "game-system/militopia-splash-screen.png";
 
-    // Attack Animations
-    public static final String[] ATTACK_RECRUIT_FRAMES = {
-            "sprites/recruit-attack/warrior_skill4_frame1.png",
-            "sprites/recruit-attack/warrior_skill4_frame2.png",
-            "sprites/recruit-attack/warrior_skill4_frame3.png",
-            "sprites/recruit-attack/warrior_skill4_frame4.png",
-            "sprites/recruit-attack/warrior_skill4_frame5.png",
-            "sprites/recruit-attack/warrior_skill4_frame6.png",
-            "sprites/recruit-attack/warrior_skill4_frame7.png"
-    };
+    // Sprite Atlases
+    public static final String RECRUIT_RUN_ATLAS    = "sprites/recruit-run.atlas";
+    public static final String RECRUIT_ATTACK_ATLAS = "sprites/recruit-attack.atlas";
+    public static final String TANK_ATTACK_ATLAS    = "sprites/tank-attack.atlas";
+    public static final String NUCLEAR_ATTACK_ATLAS = "sprites/nuclear-attack.atlas";
+    public static final String GUN_NOZZLE_ATLAS     = "sprites/gun-nozzle-flash.atlas";
+    public static final String RANGER_RUN_ATLAS      = "sprites/ranger-run.atlas";
+    public static final String SNIPER_RUN_ATLAS      = "sprites/sniper-run.atlas";
+    public static final String JUGGERNAUT_JUMP_ATLAS = "sprites/juggernaut-jump.atlas";
+    public static final String HELICOPTER_MOVE_ATLAS     = "sprites/helicoper-move.atlas";
+    public static final String TANK_IDLE_ATLAS           = "sprites/tank-idle.atlas";
+    public static final String JUGGERNAUT_BOOSTERS_ATLAS = "sprites/juggernaut-boosters.atlas";
 
-    public static final String[] ATTACK_TANK_FRAMES = {
-            "sprites/tank-attack/frame0000.png",
-            "sprites/tank-attack/frame0001.png",
-            "sprites/tank-attack/frame0002.png",
-            "sprites/tank-attack/frame0003.png",
-            "sprites/tank-attack/frame0004.png",
-            "sprites/tank-attack/frame0005.png",
-            "sprites/tank-attack/frame0006.png",
-            "sprites/tank-attack/frame0007.png",
-            "sprites/tank-attack/frame0008.png",
-            "sprites/tank-attack/frame0009.png",
-            "sprites/tank-attack/frame0010.png",
-            "sprites/tank-attack/frame0011.png",
-            "sprites/tank-attack/frame0012.png",
-            "sprites/tank-attack/frame0013.png"
-    };
-
-    public static final String[] ATTACK_NUCLEAR_FRAMES = {
-            "sprites/nuclear-attack/frame0000.png",
-            "sprites/nuclear-attack/frame0001.png",
-            "sprites/nuclear-attack/frame0002.png",
-            "sprites/nuclear-attack/frame0003.png",
-            "sprites/nuclear-attack/frame0004.png",
-            "sprites/nuclear-attack/frame0005.png",
-            "sprites/nuclear-attack/frame0006.png",
-            "sprites/nuclear-attack/frame0007.png",
-            "sprites/nuclear-attack/frame0008.png",
-            "sprites/nuclear-attack/frame0009.png",
-            "sprites/nuclear-attack/frame0010.png",
-            "sprites/nuclear-attack/frame0011.png",
-            "sprites/nuclear-attack/frame0012.png"
-    };
-
-    public static final String[] GUN_NOZZLE_FLASH_FRAMES = {
-            "sprites/gun-nozzle-flash/frame0000.png",
-            "sprites/gun-nozzle-flash/frame0001.png",
-            "sprites/gun-nozzle-flash/frame0002.png",
-            "sprites/gun-nozzle-flash/frame0003.png",
-            "sprites/gun-nozzle-flash/frame0004.png",
-            "sprites/gun-nozzle-flash/frame0005.png",
-            "sprites/gun-nozzle-flash/frame0006.png",
-            "sprites/gun-nozzle-flash/frame0007.png",
-            "sprites/gun-nozzle-flash/frame0008.png"
-    };
+    // Idle / movement atlases
+    public static final String RECRUIT_ATTACKING_ATLAS      = "sprites/recruit-attacking.atlas";
+    public static final String DRONE_MOVING_ATLAS           = "sprites/drone-moving.atlas";
+    public static final String WATER_ANIM_ATLAS             = "sprites/water-anim.atlas";
+    public static final String DEEP_WATER_ANIM_ATLAS        = "sprites/deep-water-anim.atlas";
+    public static final String DEER_IDLE_ATLAS              = "sprites/deer-idle.atlas";
+    public static final String FISH_IDLE_ATLAS              = "sprites/fish-idle.atlas";
+    public static final String HORSE_IDLE_ATLAS             = "sprites/horse-idle.atlas";
+    public static final String ZEBRA_IDLE_ATLAS             = "sprites/zebra-idle.atlas";
+    public static final String JAMMER_IDLE_ATLAS            = "sprites/jammer-idle.atlas";
+    public static final String MUNITION_FACTORY_IDLE_ATLAS  = "sprites/munition-factory-idle.atlas";
+    public static final String NUCLEAR_PLANT_IDLE_ATLAS     = "sprites/nuclear-plant-idle.atlas";
+    public static final String OIL_DERRICK_IDLE_ATLAS       = "sprites/oil-derrick-idle.atlas";
+    public static final String PORT_IDLE_ATLAS              = "sprites/port-idle.atlas";
+    public static final String RADAR_IDLE_ATLAS             = "sprites/radar-idle.atlas";
+    public static final String SOLAR_ARRAY_IDLE_ATLAS       = "sprites/solar-array-idle.atlas";
 
     public static final String FUNDING_ICON  = "ui/funding_icon.png";
     public static final String FUNDING_ICON2 = "ui/funding_icon2.png";
@@ -261,6 +237,7 @@ public class AssetManager {
         manager.load(CIRCLE_UI, Texture.class);
         manager.load(CIRCLE_UI2, Texture.class);
         manager.load(MILITOPIA_BTN, Texture.class);
+        manager.load(MENU_PANEL, Texture.class);
         manager.load(INVINCIBLE_RED, Texture.class);
         manager.load(INVINCIBLE_BLUE, Texture.class);
         manager.load(RAILWAY_ICON, Texture.class);
@@ -270,15 +247,33 @@ public class AssetManager {
         manager.load(TEXT_LOGO, Texture.class);
         manager.load(SPLASH_SCREEN, Texture.class);
 
-        // Attack animations
-        for (String frame : ATTACK_RECRUIT_FRAMES)
-            manager.load(frame, Texture.class);
-        for (String frame : ATTACK_TANK_FRAMES)
-            manager.load(frame, Texture.class);
-        for (String frame : ATTACK_NUCLEAR_FRAMES)
-            manager.load(frame, Texture.class);
-        for (String frame : GUN_NOZZLE_FLASH_FRAMES)
-            manager.load(frame, Texture.class);
+        // Sprite atlases
+        manager.load(RECRUIT_RUN_ATLAS,    TextureAtlas.class);
+        manager.load(RECRUIT_ATTACK_ATLAS, TextureAtlas.class);
+        manager.load(TANK_ATTACK_ATLAS,    TextureAtlas.class);
+        manager.load(NUCLEAR_ATTACK_ATLAS, TextureAtlas.class);
+        manager.load(GUN_NOZZLE_ATLAS,     TextureAtlas.class);
+        manager.load(RANGER_RUN_ATLAS,      TextureAtlas.class);
+        manager.load(SNIPER_RUN_ATLAS,      TextureAtlas.class);
+        manager.load(JUGGERNAUT_JUMP_ATLAS,      TextureAtlas.class);
+        manager.load(HELICOPTER_MOVE_ATLAS,     TextureAtlas.class);
+        manager.load(TANK_IDLE_ATLAS,           TextureAtlas.class);
+        manager.load(JUGGERNAUT_BOOSTERS_ATLAS, TextureAtlas.class);
+        manager.load(RECRUIT_ATTACKING_ATLAS,     TextureAtlas.class);
+        manager.load(DRONE_MOVING_ATLAS,          TextureAtlas.class);
+        manager.load(WATER_ANIM_ATLAS,            TextureAtlas.class);
+        manager.load(DEEP_WATER_ANIM_ATLAS,       TextureAtlas.class);
+        manager.load(DEER_IDLE_ATLAS,             TextureAtlas.class);
+        manager.load(FISH_IDLE_ATLAS,             TextureAtlas.class);
+        manager.load(HORSE_IDLE_ATLAS,            TextureAtlas.class);
+        manager.load(ZEBRA_IDLE_ATLAS,            TextureAtlas.class);
+        manager.load(JAMMER_IDLE_ATLAS,           TextureAtlas.class);
+        manager.load(MUNITION_FACTORY_IDLE_ATLAS, TextureAtlas.class);
+        manager.load(NUCLEAR_PLANT_IDLE_ATLAS,    TextureAtlas.class);
+        manager.load(OIL_DERRICK_IDLE_ATLAS,      TextureAtlas.class);
+        manager.load(PORT_IDLE_ATLAS,             TextureAtlas.class);
+        manager.load(RADAR_IDLE_ATLAS,            TextureAtlas.class);
+        manager.load(SOLAR_ARRAY_IDLE_ATLAS,      TextureAtlas.class);
 
         manager.load(FUNDING_ICON, Texture.class);
         manager.load(FUNDING_ICON2, Texture.class);
@@ -314,6 +309,10 @@ public class AssetManager {
 
     public void finishLoading() {
         manager.finishLoading();
+    }
+
+    public TextureAtlas getAtlas(String fileName) {
+        return manager.get(fileName, TextureAtlas.class);
     }
 
     public Texture get(String fileName) {

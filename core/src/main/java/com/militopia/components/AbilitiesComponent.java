@@ -7,6 +7,10 @@ import com.badlogic.ashley.core.Component;
  */
 public class AbilitiesComponent implements Component {
 
+    // --- Ability key constants ---
+    public static final String KEY_DIG_IN = "DIG_IN";
+    public static final String KEY_OVERWATCH = "OVERWATCH";
+
     // --- State flags ---
     public boolean isDiggingIn = false; // Recruit
     public boolean hasUsedDigIn = false; // Recruit
@@ -19,6 +23,7 @@ public class AbilitiesComponent implements Component {
     // --- Resources / Cooldowns ---
     public int fuel = -1; // Apache (-1 = N/A)
     public int nukeCooldown = 0; // Submarine
+    public float idleTimer = 0f; // Tank idle animation timer
 
     // --- Ability Specific Data ---
     public int fuelMax = 5;

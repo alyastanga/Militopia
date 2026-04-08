@@ -121,6 +121,12 @@ public class SlideMenu {
                             }
                         }
                         controller.performHunt(animalEntity, hunterUnit);
+
+                        // Tutorial Hook: Hunt Animal
+                        if (com.militopia.managers.TutorialManager.getInstance().isActive()
+                                && com.militopia.managers.TutorialManager.getInstance().getCurrentStep() == com.militopia.managers.TutorialManager.Step.HUNT_ANIMAL) {
+                            com.militopia.managers.TutorialManager.getInstance().nextStep();
+                        }
                     }
                 });
 
@@ -145,7 +151,7 @@ public class SlideMenu {
         StatsComponent sStats = structureEntity.getComponent(StatsComponent.class);
         String label = "Capture Structure";
         if (sStats != null) {
-            if (StructureType.fromDisplayName(sStats.name) == StructureType.TOWN)
+            if (StructureType.fromKey(sStats.unitTypeKey) == StructureType.TOWN)
                 label = "Capture Town";
             else
                 label = "Capture Enemy Base";
@@ -322,7 +328,7 @@ public class SlideMenu {
             if (!unlocked.contains(unit.name()))
                 continue;
             StatsComponent.MoveType moveType = unitFactory.getUnitMoveType(unit);
-            boolean show = producerType.equals("PORT")
+            boolean show = StructureType.PORT.getKey().equals(producerType)
                     ? moveType == StatsComponent.MoveType.SEA
                     : moveType == StatsComponent.MoveType.LAND || moveType == StatsComponent.MoveType.AIR;
             if (!show)
@@ -407,7 +413,7 @@ public class SlideMenu {
                     continue;
 
                 StatsComponent.MoveType moveType = unitFactory.getUnitMoveType(superUnit);
-                boolean show = producerType.equals("PORT")
+                boolean show = StructureType.PORT.getKey().equals(producerType)
                         ? moveType == StatsComponent.MoveType.SEA
                         : moveType == StatsComponent.MoveType.LAND || moveType == StatsComponent.MoveType.AIR;
 
@@ -498,7 +504,7 @@ public class SlideMenu {
         if (existingStruct != null) {
             StatsComponent stats = existingStruct.getComponent(StatsComponent.class);
             // Allow building ONLY if it's an Oil Reservoir (allows Oil Derrick)
-            if (stats == null || !stats.name.equals("Oil Reservoir")) {
+            if (stats == null || !MapGenerator.ObjectType.OIL.name().equals(stats.unitTypeKey)) {
                 hasBlockingStructure = true;
             }
         }
@@ -509,14 +515,14 @@ public class SlideMenu {
                 show = false;
             } else if (isOilTile) {
                 // On Oil tiles, ONLY show Oil Derrick
-                show = struct.equals("OIL_DERRICK");
+                show = StructureType.OIL_DERRICK.getKey().equals(struct);
             } else {
                 // On regular tiles, show everything BUT Oil Derrick (and respect water/land)
-                if (struct.equals("PORT"))
+                if (StructureType.PORT.getKey().equals(struct))
                     show = isWater && isCoastalWater;
-                else if (struct.equals("NUCLEAR"))
+                else if (StructureType.NUCLEAR_PLANT.getKey().equals(struct))
                     show = !isWater && isCoastalLand;
-                else if (struct.equals("OIL_DERRICK"))
+                else if (StructureType.OIL_DERRICK.getKey().equals(struct))
                     show = false; // Hide on non-oil tiles
                 else
                     show = !isWater;

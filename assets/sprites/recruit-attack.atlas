@@ -1,0 +1,17 @@
+recruit-attack.png
+size:1024,256
+repeat:none
+warrior_skill4_frame1
+bounds:132,2,128,128
+warrior_skill4_frame2
+bounds:652,2,128,128
+warrior_skill4_frame3
+bounds:392,2,128,128
+warrior_skill4_frame4
+bounds:2,2,128,128
+warrior_skill4_frame5
+bounds:522,2,128,128
+warrior_skill4_frame6
+bounds:262,2,128,128
+warrior_skill4_frame7
+bounds:782,2,128,128

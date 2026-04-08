@@ -12,6 +12,7 @@ public class StructureData {
     public String chosenSuperUnit;
     public int parentBaseX = -1;
     public int parentBaseY = -1;
+    public String unitTypeKey;
 
     // Default constructor for JSON
     public StructureData() {

@@ -6,6 +6,8 @@ import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.core.PooledEngine;
 import com.badlogic.ashley.utils.ImmutableArray;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.militopia.components.*;
@@ -38,26 +40,20 @@ public class UnitFactory {
     private final Map<String, TextureRegion[]> unitRegions = new java.util.HashMap<>();
     private final Map<String, TextureRegion> baseRegions = new java.util.HashMap<>();
     private final Map<String, TextureRegion> structRegions = new java.util.HashMap<>();
+    private final Map<String, TextureRegion> terrainRegions = new java.util.HashMap<>();
+    private final Map<String, TextureRegion> animalRegions = new java.util.HashMap<>();
 
-    // Regions
-    private final TextureRegion grassRegion;
-    private final TextureRegion waterRegion;
-    private final TextureRegion deepWaterRegion;
-    private final TextureRegion sandRegion;
-    private final TextureRegion mountainRegion;
-    private final TextureRegion treeRegion;
-    private final TextureRegion ruinsRegion;
-    private final TextureRegion townRegion;
-    private final TextureRegion oilRegion;
-    private final TextureRegion cactusRegion;
-    private final TextureRegion mountainObjRegion;
     public final TextureRegion fogRegion;
 
-    // Animals
-    private final TextureRegion horseRegion;
-    private final TextureRegion fishRegion;
-    private final TextureRegion deerRegion;
-    private final TextureRegion zebraRegion;
+    // Idle animations (animals + structures)
+    private final java.util.Map<String, Animation<TextureRegion>> idleAnims = new java.util.HashMap<>();
+
+    // Tank idle — injected after EntityFactory builds it
+    private Animation<TextureRegion> tankIdleAnim;
+
+    public void setTankIdleAnim(Animation<TextureRegion> anim) {
+        this.tankIdleAnim = anim;
+    }
 
     public PooledEngine getEngine() {
         return engine;
@@ -124,33 +120,53 @@ public class UnitFactory {
         structRegions.put("RADAR",            new TextureRegion(assets.get(AssetManager.RADAR_STATION)));
         structRegions.put("JAMMER",           new TextureRegion(assets.get(AssetManager.SIGNAL_JAMMER)));
 
-        // Tiles
-        this.grassRegion      = new TextureRegion(assets.get(AssetManager.TILE_GRASS));
-        this.waterRegion      = new TextureRegion(assets.get(AssetManager.TILE_WATER));
-        this.deepWaterRegion  = new TextureRegion(assets.get(AssetManager.TILE_DEEPWATER));
-        this.sandRegion       = new TextureRegion(assets.get(AssetManager.TILE_SAND));
-        this.mountainRegion   = new TextureRegion(assets.get(AssetManager.TILE_MOUNTAIN));
+        // Terrain tiles
+        terrainRegions.put("GRASS",        new TextureRegion(assets.get(AssetManager.TILE_GRASS)));
+        terrainRegions.put("WATER",        new TextureRegion(assets.get(AssetManager.TILE_WATER)));
+        terrainRegions.put("DEEP_WATER",   new TextureRegion(assets.get(AssetManager.TILE_DEEPWATER)));
+        terrainRegions.put("SAND",         new TextureRegion(assets.get(AssetManager.TILE_SAND)));
+        terrainRegions.put("MOUNTAIN",     new TextureRegion(assets.get(AssetManager.TILE_MOUNTAIN)));
 
         // Objects
-        this.treeRegion        = new TextureRegion(assets.get(AssetManager.OBJ_TREE));
-        this.ruinsRegion       = new TextureRegion(assets.get(AssetManager.OBJ_RUINS));
-        this.townRegion        = new TextureRegion(assets.get(AssetManager.STRUCT_TOWN));
-        this.oilRegion         = new TextureRegion(assets.get(AssetManager.OBJ_OIL));
-        this.cactusRegion      = new TextureRegion(assets.get(AssetManager.OBJ_CACTUS));
-        this.mountainObjRegion = new TextureRegion(assets.get(AssetManager.OBJ_MOUNTAIN));
-        this.fogRegion         = new TextureRegion(assets.get(AssetManager.FOG_OF_WAR));
+        terrainRegions.put("TREE",         new TextureRegion(assets.get(AssetManager.OBJ_TREE)));
+        terrainRegions.put("RUINS",        new TextureRegion(assets.get(AssetManager.OBJ_RUINS)));
+        terrainRegions.put("TOWN",         new TextureRegion(assets.get(AssetManager.STRUCT_TOWN)));
+        terrainRegions.put("OIL",          new TextureRegion(assets.get(AssetManager.OBJ_OIL)));
+        terrainRegions.put("CACTUS",       new TextureRegion(assets.get(AssetManager.OBJ_CACTUS)));
+        terrainRegions.put("MOUNTAIN_OBJ", new TextureRegion(assets.get(AssetManager.OBJ_MOUNTAIN)));
 
-        // Add to map for consistent lookup via getTextureForPopup
-        structRegions.put("TOWN",  townRegion);
-        structRegions.put("RUINS", ruinsRegion);
-        structRegions.put("OIL",   oilRegion);
+        this.fogRegion = new TextureRegion(assets.get(AssetManager.FOG_OF_WAR));
+
+        // Add to structRegions for consistent lookup via getTextureForPopup
+        structRegions.put("TOWN",  terrainRegions.get("TOWN"));
+        structRegions.put("RUINS", terrainRegions.get("RUINS"));
+        structRegions.put("OIL",   terrainRegions.get("OIL"));
         structRegions.put("RAILWAY", new TextureRegion(assets.get(AssetManager.RAILWAY_ICON)));
 
         // Animals
-        this.horseRegion = new TextureRegion(assets.get(AssetManager.HORSE));
-        this.fishRegion  = new TextureRegion(assets.get(AssetManager.FISH));
-        this.deerRegion  = new TextureRegion(assets.get(AssetManager.DEER));
-        this.zebraRegion = new TextureRegion(assets.get(AssetManager.ZEBRA));
+        animalRegions.put("HORSE", new TextureRegion(assets.get(AssetManager.HORSE)));
+        animalRegions.put("FISH",  new TextureRegion(assets.get(AssetManager.FISH)));
+        animalRegions.put("DEER",  new TextureRegion(assets.get(AssetManager.DEER)));
+        animalRegions.put("ZEBRA", new TextureRegion(assets.get(AssetManager.ZEBRA)));
+
+        // Idle animations
+        idleAnims.put("DEER",            buildIdleAnim(assets.getAtlas(AssetManager.DEER_IDLE_ATLAS)));
+        idleAnims.put("FISH",            buildIdleAnim(assets.getAtlas(AssetManager.FISH_IDLE_ATLAS)));
+        idleAnims.put("HORSE",           buildIdleAnim(assets.getAtlas(AssetManager.HORSE_IDLE_ATLAS)));
+        idleAnims.put("ZEBRA",           buildIdleAnim(assets.getAtlas(AssetManager.ZEBRA_IDLE_ATLAS)));
+        idleAnims.put("JAMMER",          buildIdleAnim(assets.getAtlas(AssetManager.JAMMER_IDLE_ATLAS)));
+        idleAnims.put("MUNITION_FACTORY",buildIdleAnim(assets.getAtlas(AssetManager.MUNITION_FACTORY_IDLE_ATLAS)));
+        idleAnims.put("NUCLEAR",         buildIdleAnim(assets.getAtlas(AssetManager.NUCLEAR_PLANT_IDLE_ATLAS)));
+        idleAnims.put("OIL_DERRICK",     buildIdleAnim(assets.getAtlas(AssetManager.OIL_DERRICK_IDLE_ATLAS)));
+        idleAnims.put("PORT",            buildIdleAnim(assets.getAtlas(AssetManager.PORT_IDLE_ATLAS)));
+        idleAnims.put("RADAR",           buildIdleAnim(assets.getAtlas(AssetManager.RADAR_IDLE_ATLAS)));
+        idleAnims.put("SOLAR",           buildIdleAnim(assets.getAtlas(AssetManager.SOLAR_ARRAY_IDLE_ATLAS)));
+    }
+
+    private Animation<TextureRegion> buildIdleAnim(TextureAtlas atlas) {
+        com.badlogic.gdx.utils.Array<TextureAtlas.AtlasRegion> regions = atlas.getRegions();
+        regions.sort((a, b) -> a.name.compareTo(b.name));
+        return new Animation<>(2f / 24f, regions, Animation.PlayMode.LOOP);
     }
 
     /** Builds a [right, left-flipped] pair from a single texture and stores it. */
@@ -210,6 +226,19 @@ public class UnitFactory {
         }
 
         entity.add(stats);
+
+        if (unitType == UnitType.TANK && tankIdleAnim != null) {
+            IdleAnimationComponent idleAnim = new IdleAnimationComponent();
+            idleAnim.animation = tankIdleAnim;
+            idleAnim.overlayOnly = true;
+            idleAnim.respectsFacing = true;
+            idleAnim.drawOffsetX = GameConfig.TANK_IDLE_OFFSET_X;
+            idleAnim.drawOffsetY = GameConfig.TANK_IDLE_OFFSET_Y;
+            idleAnim.paused = true;
+            idleAnim.pauseTimer = MathUtils.random(2f, 3f);
+            entity.add(idleAnim);
+        }
+
         engine.addEntity(entity);
     }
 
@@ -257,6 +286,7 @@ public class UnitFactory {
                 AbilitiesComponent a = e.getComponent(AbilitiesComponent.class);
                 boolean isDiggingIn = false, hasUsedDigIn = false, isOverwatchActive = false, isCloaked = false, pendingSkirmishMove = false, isUnreachable = false;
                 int fuel = -1, nukeCooldown = 0;
+                float idleTimer = 0f;
                 if (a != null) {
                     isDiggingIn = a.isDiggingIn;
                     hasUsedDigIn = a.hasUsedDigIn;
@@ -266,13 +296,16 @@ public class UnitFactory {
                     isUnreachable = a.isUnreachable;
                     fuel = a.fuel;
                     nukeCooldown = a.nukeCooldown;
+                    idleTimer = a.idleTimer;
                 }
 
-                unitSnaps.add(new UnitSnapshot(
+                UnitSnapshot unitSnap = new UnitSnapshot(
                         s.unitTypeKey, p.x, p.y, s.owner,
                         s.currentHP, s.hasActed, s.hasMoved, s.moveType,
                         isDiggingIn, hasUsedDigIn, isOverwatchActive, isCloaked, a != null ? a.isCloakBroken : false,
-                        pendingSkirmishMove, isUnreachable, fuel, nukeCooldown));
+                        pendingSkirmishMove, isUnreachable, fuel, nukeCooldown);
+                unitSnap.idleTimer = idleTimer;
+                unitSnaps.add(unitSnap);
 
             } else if (type.type == TypeComponent.Type.OBJECT && e.getComponent(AnimalComponent.class) == null) {
                 // Capture ALL non-animal static objects/structures so they can be restored
@@ -344,7 +377,7 @@ public class UnitFactory {
 
         TextureRegion region = structRegions.get(regionKey);
         if (region == null) {
-            region = horseRegion; // Fallback
+            region = animalRegions.get("HORSE"); // Fallback
         }
         Entity entity = engine.createEntity();
         entity.add(new GridPositionComponent(x, y, 1)); // Layer 1
@@ -365,49 +398,59 @@ public class UnitFactory {
         stats.parentBaseY = parentY;
 
         // --- Set XP Gain & Income per structure type ---
-        if (type.equals("MUNITION_FACTORY")) {
+        if (structureType == StructureType.MUNITION_FACTORY) {
             stats.xpGain = 50;
             stats.income = 2;
         }
 
-        if (type.equals("PORT")) {
+        if (structureType == StructureType.PORT) {
             stats.xpGain = 50;
             stats.income = 0;
         }
 
-        if (type.equals("HOSPITAL")) {
+        if (structureType == StructureType.HOSPITAL) {
             stats.xpGain = 50;
             stats.income = 0;
         }
 
-        if (type.equals("SOLAR")) {
+        if (structureType == StructureType.SOLAR) {
             stats.xpGain = 75;
             stats.income = 3;
         }
 
-        if (type.equals("OIL_DERRICK")) {
+        if (structureType == StructureType.OIL_DERRICK) {
             stats.xpGain = 100;
             stats.income = 6;
         }
 
-        if (type.equals("NUCLEAR")) {
+        if (structureType == StructureType.NUCLEAR_PLANT) {
             stats.xpGain = 150;
             stats.income = 15;
         }
 
-        if (type.equals("RADAR")) {
+        if (structureType == StructureType.RADAR) {
             stats.xpGain = 75;
             stats.income = 0;
             stats.vision = 4;
         }
 
-        if (type.equals("JAMMER")) {
+        if (structureType == StructureType.SIGNAL_JAMMER) {
             stats.xpGain = 75;
             stats.income = 0;
             stats.vision = 2;
         }
 
         entity.add(stats);
+
+        Animation<TextureRegion> structAnim = idleAnims.get(type);
+        if (structAnim != null) {
+            IdleAnimationComponent idleAnim = new IdleAnimationComponent();
+            idleAnim.animation = structAnim;
+            idleAnim.paused = true;
+            idleAnim.pauseTimer = MathUtils.random(2f, 3f);
+            entity.add(idleAnim);
+        }
+
         engine.addEntity(entity);
     }
 
@@ -442,6 +485,20 @@ public class UnitFactory {
             animalStats.unitTypeKey = type.name();
             entity.add(animalStats);
             entity.add(new AnimalComponent(type.name()));
+            Animation<TextureRegion> animalAnim = idleAnims.get(type.name());
+            if (animalAnim != null) {
+                IdleAnimationComponent idleAnim = new IdleAnimationComponent();
+                idleAnim.animation = animalAnim;
+                boolean isFish = type.name().equals("FISH");
+                if (isFish) {
+                    idleAnim.looping = true;
+                    idleAnim.stateTime = MathUtils.random(0f, 2f);
+                } else {
+                    idleAnim.paused = true;
+                    idleAnim.pauseTimer = MathUtils.random(2f, 3f);
+                }
+                entity.add(idleAnim);
+            }
         } else if (type == MapGenerator.ObjectType.BASE_P1 || type == MapGenerator.ObjectType.BASE_P2) {
             int owner = (type == MapGenerator.ObjectType.BASE_P1) ? 1 : 2;
             state.p1BaseCount += (owner == 1 ? 1 : 0);
@@ -567,7 +624,7 @@ public class UnitFactory {
 
             if ("PORT".equals(s.unitTypeKey)) {
                 myPorts.add(e);
-            } else if (StructureType.fromDisplayName(s.name) == StructureType.BASE) {
+            } else if (s.unitTypeKey != null && s.unitTypeKey.startsWith("BASE")) {
                 myBases.add(e);
             }
         }
@@ -660,7 +717,7 @@ public class UnitFactory {
         // isTown check is not sufficient — Oil Derricks and other non-base owned structures
         // would pass the isTown=false branch and have their stats and texture overwritten.
         boolean isTown = (pos != null && map.objects[pos.x][pos.y] == MapGenerator.ObjectType.TOWN);
-        boolean isBase = StructureType.fromDisplayName(stats.name) == StructureType.BASE;
+        boolean isBase = stats.unitTypeKey != null && stats.unitTypeKey.startsWith("BASE");
         if (isBase) {
             com.militopia.config.BaseLevelConfig.LevelData levelData = com.militopia.config.BaseLevelConfig
                     .getLevel(stats.level);
@@ -963,7 +1020,7 @@ public class UnitFactory {
         if (key.startsWith("BASE_P")) {
             return getHudIcon(MapGenerator.ObjectType.valueOf(key));
         }
-        return horseRegion;
+        return animalRegions.get("HORSE");
     }
 
     /**
@@ -987,13 +1044,13 @@ public class UnitFactory {
     public TextureRegion getHudIcon(MapGenerator.ObjectType type) {
         switch (type) {
             case HORSE:
-                return horseRegion;
+                return animalRegions.get("HORSE");
             case FISH:
-                return fishRegion;
+                return animalRegions.get("FISH");
             case DEER:
-                return deerRegion;
+                return animalRegions.get("DEER");
             case ZEBRA:
-                return zebraRegion;
+                return animalRegions.get("ZEBRA");
 
             case BASE_P1:
                 return baseRegions.get("lvl1_blue");
@@ -1046,7 +1103,7 @@ public class UnitFactory {
                 return baseRegions.get("lvl10_red");
 
             case TOWN:
-                return townRegion;
+                return terrainRegions.get("TOWN");
             default:
                 return getObjectUi(type).region;
         }
@@ -1132,37 +1189,37 @@ public class UnitFactory {
 
         // Other Object
         if (type == MapGenerator.ObjectType.TOWN) {
-            return new UiInfo("Town", townRegion);
+            return new UiInfo("Town", terrainRegions.get("TOWN"));
         }
         if (type == MapGenerator.ObjectType.TREE) {
-            return new UiInfo("Oak Tree", treeRegion);
+            return new UiInfo("Oak Tree", terrainRegions.get("TREE"));
         }
         if (type == MapGenerator.ObjectType.RUINS) {
-            return new UiInfo("Ancient Ruins", ruinsRegion);
+            return new UiInfo("Ancient Ruins", terrainRegions.get("RUINS"));
         }
         if (type == MapGenerator.ObjectType.OIL) {
-            return new UiInfo("Oil Reservoir", oilRegion);
+            return new UiInfo("Oil Reservoir", terrainRegions.get("OIL"));
         }
         if (type == MapGenerator.ObjectType.CACTUS) {
-            return new UiInfo("Cactus", cactusRegion);
+            return new UiInfo("Cactus", terrainRegions.get("CACTUS"));
         }
         if (type == MapGenerator.ObjectType.MOUNTAIN_OBJ) {
-            return new UiInfo("Mountain", mountainObjRegion);
+            return new UiInfo("Mountain", terrainRegions.get("MOUNTAIN_OBJ"));
         }
         if (type == MapGenerator.ObjectType.HORSE) {
-            return new UiInfo("Wild Horse", horseRegion);
+            return new UiInfo("Wild Horse", animalRegions.get("HORSE"));
         }
         if (type == MapGenerator.ObjectType.FISH) {
-            return new UiInfo("Fish School", fishRegion);
+            return new UiInfo("Fish School", animalRegions.get("FISH"));
         }
         if (type == MapGenerator.ObjectType.DEER) {
-            return new UiInfo("Forest Deer", deerRegion);
+            return new UiInfo("Forest Deer", animalRegions.get("DEER"));
         }
         if (type == MapGenerator.ObjectType.ZEBRA) {
-            return new UiInfo("Zebra", zebraRegion);
+            return new UiInfo("Zebra", animalRegions.get("ZEBRA"));
         }
 
-        return new UiInfo("Unknown Object", grassRegion);
+        return new UiInfo("Unknown Object", terrainRegions.get("GRASS"));
     }
 
     /**
@@ -1174,19 +1231,19 @@ public class UnitFactory {
     public TextureRegion getTextureForTerrain(int terrainId) {
         MapGenerator.TerrainType[] allTypes = MapGenerator.TerrainType.values();
         if (terrainId < 0 || terrainId >= allTypes.length) {
-            return grassRegion;
+            return terrainRegions.get("GRASS");
         }
         MapGenerator.TerrainType type = allTypes[terrainId];
         if (type == MapGenerator.TerrainType.WATER) {
-            return waterRegion;
+            return terrainRegions.get("WATER");
         } else if (type == MapGenerator.TerrainType.DEEP_WATER) {
-            return deepWaterRegion;
+            return terrainRegions.get("DEEP_WATER");
         } else if (type == MapGenerator.TerrainType.SAND) {
-            return sandRegion;
+            return terrainRegions.get("SAND");
         } else if (type == MapGenerator.TerrainType.MOUNTAIN) {
-            return mountainRegion;
+            return terrainRegions.get("MOUNTAIN");
         } else {
-            return grassRegion;
+            return terrainRegions.get("GRASS");
         }
     }
 
@@ -1199,15 +1256,15 @@ public class UnitFactory {
     public UiInfo getTerrainUi(MapGenerator.TerrainType type) {
         switch (type) {
             case WATER:
-                return new UiInfo("Shallow Water", waterRegion);
+                return new UiInfo("Shallow Water", terrainRegions.get("WATER"));
             case DEEP_WATER:
-                return new UiInfo("Deep Ocean", deepWaterRegion);
+                return new UiInfo("Deep Ocean", terrainRegions.get("DEEP_WATER"));
             case SAND:
-                return new UiInfo("Desert", sandRegion);
+                return new UiInfo("Desert", terrainRegions.get("SAND"));
             case MOUNTAIN:
-                return new UiInfo("Mountain Range", mountainRegion);
+                return new UiInfo("Mountain Range", terrainRegions.get("MOUNTAIN"));
             default:
-                return new UiInfo("Grassland", grassRegion);
+                return new UiInfo("Grassland", terrainRegions.get("GRASS"));
         }
     }
 

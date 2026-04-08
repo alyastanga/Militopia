@@ -75,8 +75,9 @@ public class NetworkManager {
 
         new Thread(() -> {
             try {
-                serverSocket = new ServerSocket(PORT);
+                serverSocket = new ServerSocket();
                 serverSocket.setReuseAddress(true);
+                serverSocket.bind(new InetSocketAddress(PORT));
                 Gdx.app.log(TAG, "Host listening on port " + PORT);
 
                 // Start UDP broadcast so clients can discover us

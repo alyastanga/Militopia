@@ -5,11 +5,14 @@ import com.militopia.managers.AudioManager;
 import com.militopia.managers.VideoBackgroundManager;
 import com.militopia.screen.SplashScreen;
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
@@ -44,6 +47,22 @@ public class MilitopiaGame extends Game {
         skin.add("russo-btn", assets.getRussoBtnFont());
         skin.add("standard", assets.getFont());
 
+        // Menu panel fonts
+        FreeTypeFontGenerator menuFontGen = new FreeTypeFontGenerator(Gdx.files.internal("game-system/russo_one.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter menuItemParam = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        menuItemParam.size = 20;
+        menuItemParam.minFilter = Texture.TextureFilter.Linear;
+        menuItemParam.magFilter = Texture.TextureFilter.Linear;
+        BitmapFont menuItemFont = menuFontGen.generateFont(menuItemParam);
+        FreeTypeFontGenerator.FreeTypeFontParameter menuTitleParam = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        menuTitleParam.size = 20;
+        menuTitleParam.minFilter = Texture.TextureFilter.Linear;
+        menuTitleParam.magFilter = Texture.TextureFilter.Linear;
+        BitmapFont menuTitleFont = menuFontGen.generateFont(menuTitleParam);
+        menuFontGen.dispose();
+        skin.add("russo-menu-item", menuItemFont);
+        skin.add("russo-menu-title", menuTitleFont);
+
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(Color.WHITE);
         pixmap.fill();
@@ -70,6 +89,21 @@ public class MilitopiaGame extends Game {
         labelStyle.font = skin.getFont("russo");
         labelStyle.fontColor = Color.WHITE;
         skin.add("default", labelStyle);
+
+        Label.LabelStyle menuItemStyle = new Label.LabelStyle();
+        menuItemStyle.font = skin.getFont("russo-menu-item");
+        menuItemStyle.fontColor = Color.WHITE;
+        skin.add("menu-item", menuItemStyle);
+
+        Label.LabelStyle menuItemHoverStyle = new Label.LabelStyle();
+        menuItemHoverStyle.font = skin.getFont("russo-menu-item");
+        menuItemHoverStyle.fontColor = colorGold;
+        skin.add("menu-item-hover", menuItemHoverStyle);
+
+        Label.LabelStyle menuTitleStyle = new Label.LabelStyle();
+        menuTitleStyle.font = skin.getFont("russo-menu-title");
+        menuTitleStyle.fontColor = colorGold;
+        skin.add("menu-title", menuTitleStyle);
 
         TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
         textButtonStyle.font = assets.getFont();
@@ -107,6 +141,11 @@ public class MilitopiaGame extends Game {
         milBtnStyle.down = milBtnDown;
         milBtnStyle.over = milBtnOver;
         skin.add("militopia-btn", milBtnStyle);
+
+        // Side menu panel background — loaded from PNG asset, tinted to 70% opacity
+        NinePatch panelPatch = new NinePatch(assets.get(AssetManager.MENU_PANEL), 32, 32, 32, 2);
+        panelPatch.setColor(new Color(1f, 1f, 1f, 0.60f));
+        skin.add("menu-panel", panelPatch);
 
         // Standard Button (Dark Gray Rounded)
         Color semiTransGray = new Color(0.15f, 0.15f, 0.15f, 0.7f);

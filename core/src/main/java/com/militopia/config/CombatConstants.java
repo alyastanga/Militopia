@@ -16,7 +16,9 @@ public class CombatConstants {
     // Jump animation (Juggernaut)
     // -----------------------------------------------------------------------
     public static final float JUMP_ARC_HEIGHT = 25f;
-    public static final float JUMP_DURATION = 0.7f;
+    public static final float JUMP_ARC_DURATION = 0.5f;  // how long the in-air arc lasts; post-landing frames fill the rest
+    public static final float JUMP_DURATION = 0.7f;      // full animation duration including post-landing frames
+    public static final float JUMP_LANDING_THRESHOLD = 2f; // arc Y (px) below which landing is triggered on descent
 
     // -----------------------------------------------------------------------
     // Attack animations
@@ -68,4 +70,24 @@ public class CombatConstants {
     public static final int JAMMER_SUPPRESSED_VISION = 1;
     /** Radius within which any unit can spot a cloaked (stealthed) enemy. */
     public static final int STEALTH_DETECTION_RADIUS = 1;
+
+    // -----------------------------------------------------------------------
+    // Juggernaut jump — super unit interaction
+    // -----------------------------------------------------------------------
+    /** Damage multiplier applied to the primary super-unit target on a Juggernaut jump. */
+    public static final float JUMP_SUPER_UNIT_DAMAGE_MULTIPLIER = 1.5f;
+
+    // -----------------------------------------------------------------------
+    // AoE splash (Juggernaut jump landing, B2, Submarine)
+    // -----------------------------------------------------------------------
+    /** Chebyshev radius of AoE splash applied on Juggernaut jump landing and B2/Submarine attacks. */
+    public static final int AOE_SPLASH_RADIUS = 1;
+    /** Damage multiplier applied to AoE splash tiles for B2 and Submarine attacks (reduces splash damage). */
+    public static final float AOE_SPLASH_DAMAGE_MULTIPLIER = 1f / 1.5f;
+
+    // -----------------------------------------------------------------------
+    // Entity search limits
+    // -----------------------------------------------------------------------
+    /** Maximum search radius used by findNearestFreeTile when placing units. */
+    public static final int NEAREST_FREE_TILE_MAX_RADIUS = 10;
 }

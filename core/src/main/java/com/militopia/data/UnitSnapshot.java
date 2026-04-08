@@ -26,6 +26,7 @@ public class UnitSnapshot {
     public boolean isUnreachable;
     public int fuel;
     public int nukeCooldown;
+    public float idleTimer = 0f;
 
     /** No-arg constructor for LibGDX Json serialization */
     public UnitSnapshot() {

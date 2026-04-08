@@ -98,7 +98,7 @@ public class StructureEconomySystem extends EntitySystem {
             if (stats.owner != playerID)
                 continue;
 
-            if (stats.income >= 2 && StructureType.fromDisplayName(stats.name) == StructureType.BASE) {
+            if (stats.income >= 2 && stats.unitTypeKey != null && stats.unitTypeKey.startsWith("BASE")) {
                 myBases.add(entity);
             } else if (stats.xpGain > 0 && stats.parentBaseX != -1
                     && entity.getComponent(GridPositionComponent.class) != null) {
@@ -227,7 +227,7 @@ public class StructureEconomySystem extends EntitySystem {
 
         int income = stats.income;
         GridPositionComponent pos = entity.getComponent(GridPositionComponent.class);
-        if (pos != null && StructureType.fromDisplayName(stats.name) == StructureType.SOLAR) {
+        if (pos != null && StructureType.fromKey(stats.unitTypeKey) == StructureType.SOLAR) {
             // SOLAR ARRAY: Adjacency Bonus (+1 income for each adjacent friendly structure)
             // Use index-based loop to avoid nested-iterator crash when called from
             // inside another for-each over the same family (e.g. calculateGroupedBaseIncome).
@@ -239,7 +239,7 @@ public class StructureEconomySystem extends EntitySystem {
                 StatsComponent oStats = other.getComponent(StatsComponent.class);
                 GridPositionComponent oPos = other.getComponent(GridPositionComponent.class);
                 if (oStats.owner == stats.owner
-                        && (oStats.income > 0 || StructureType.fromDisplayName(oStats.name) == StructureType.BASE)
+                        && (oStats.income > 0 || (oStats.unitTypeKey != null && oStats.unitTypeKey.startsWith("BASE")))
                         && Math.max(Math.abs(pos.x - oPos.x), Math.abs(pos.y - oPos.y)) <= 1) {
                     income++;
                 }
@@ -251,7 +251,7 @@ public class StructureEconomySystem extends EntitySystem {
     /** Grouped income for a base: base income + all linked child structures. */
     public int calculateGroupedBaseIncome(Entity base) {
         StatsComponent stats = base.getComponent(StatsComponent.class);
-        if (stats == null || StructureType.fromDisplayName(stats.name) != StructureType.BASE)
+        if (stats == null || stats.unitTypeKey == null || !stats.unitTypeKey.startsWith("BASE"))
             return calculateBaseIncome(base);
 
         int total = calculateBaseIncome(base);
@@ -275,7 +275,7 @@ public class StructureEconomySystem extends EntitySystem {
         StatsComponent stats = base.getComponent(StatsComponent.class);
         if (stats == null) return 0;
 
-        if (StructureType.fromDisplayName(stats.name) != StructureType.BASE)
+        if (StructureType.fromKey(stats.unitTypeKey) != StructureType.BASE)
             return stats.xpGain;
 
         int total = 250 + ((stats.level - 1) * 10);
@@ -382,7 +382,7 @@ public class StructureEconomySystem extends EntitySystem {
             StatsComponent stats = entity.getComponent(StatsComponent.class);
             if (stats.owner != playerID) continue;
 
-            if (stats.income >= 2 && StructureType.fromDisplayName(stats.name) == StructureType.BASE) {
+            if (stats.income >= 2 && stats.unitTypeKey != null && stats.unitTypeKey.startsWith("BASE")) {
                 // Natural base XP
                 int naturalGain = 250 + ((stats.level - 1) * 10);
                 String key = (stats.baseOrdinal != null && !stats.baseOrdinal.isEmpty())

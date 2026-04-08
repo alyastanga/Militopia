@@ -5,14 +5,16 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.Value;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
@@ -23,7 +25,6 @@ import com.militopia.managers.SFXKeys;
 import com.militopia.managers.VideoBackgroundManager;
 import com.militopia.utils.GameLogger;
 import com.militopia.ui.SoundSettingsPopup;
-import com.militopia.utils.HoverListener;
 
 public class MenuScreen implements Screen {
 
@@ -32,103 +33,140 @@ public class MenuScreen implements Screen {
 
     public MenuScreen(final MilitopiaGame game) {
         this.game = game;
-        stage = new Stage(new ExtendViewport(1280, 720));
+        stage = new Stage(new ExtendViewport(1280, 800));
         Gdx.input.setInputProcessor(stage);
+        buildUI();
+    }
 
-        Table table = new Table();
-        table.setFillParent(true);
-        stage.addActor(table);
+    private void buildUI() {
+        stage.clear();
 
-        TextButton newGameBtn = new TextButton("NEW GAME", game.skin, "militopia-btn");
-        newGameBtn.getLabel().setFontScale(1.4f);
-        newGameBtn.addListener(new HoverListener());
-        TextButton lanBtn = new TextButton("MULTIPLAYER", game.skin, "militopia-btn");
-        lanBtn.getLabel().setFontScale(1.4f);
-        lanBtn.addListener(new HoverListener());
-        TextButton tutorialBtn = new TextButton("TUTORIAL", game.skin, "militopia-btn");
-        tutorialBtn.getLabel().setFontScale(1.4f);
-        tutorialBtn.addListener(new HoverListener());
-        TextButton resumeBtn = new TextButton("SAVED GAMES", game.skin, "militopia-btn");
-        resumeBtn.getLabel().setFontScale(1.4f);
-        resumeBtn.addListener(new HoverListener());
-        TextButton soundBtn = new TextButton("SOUND SETTINGS", game.skin, "militopia-btn");
-        soundBtn.getLabel().setFontScale(1.4f);
-        soundBtn.addListener(new HoverListener());
-        TextButton exitBtn = new TextButton("EXIT", game.skin, "militopia-btn");
-        exitBtn.getLabel().setFontScale(1.4f);
-        exitBtn.addListener(new HoverListener());
+        float panelWidth = stage.getWidth() * 0.27f;
+        float panelHeight = stage.getHeight() * 0.82f;
+        float contentWidth = panelWidth - 40f;
 
-        newGameBtn.addListener(new ClickListener() {
+        Table root = new Table();
+        root.setFillParent(true);
+        root.left();
+        root.padLeft(50);
+        stage.addActor(root);
+
+        Table panel = new Table();
+        panel.setBackground(game.skin.getDrawable("menu-panel"));
+        panel.top().left();
+        panel.pad(40, 20, 40, 20);
+
+        // Logo
+        Texture logoTex = game.assets.get(AssetManager.TEXT_LOGO);
+        Image logoImage = new Image(new TextureRegionDrawable(new TextureRegion(logoTex)));
+        logoImage.setScaling(Scaling.fit);
+        panel.add(logoImage).width(contentWidth).height(contentWidth * 0.333f).padBottom(4).left();
+        panel.row();
+
+        // Subtitle
+        Label subtitle = new Label("DIVIDE AND CONQUER", game.skin, "menu-title");
+        subtitle.setAlignment(Align.center);
+        panel.add(subtitle).fillX().padBottom(50).center();
+        panel.row();
+
+        // Menu items
+        addMenuItem(panel, panelWidth, "NEW GAME", new Runnable() {
             @Override
-            public void clicked(InputEvent event, float x, float y) {
+            public void run() {
                 AudioManager.getInstance().playSFX(SFXKeys.UI_CLICK_CONFIRM);
                 GameLogger.logScreen("Navigating → New Game Screen");
                 game.setScreen(new NewGameScreen(game));
             }
         });
-
-        lanBtn.addListener(new ClickListener() {
+        addMenuItem(panel, panelWidth, "MULTIPLAYER", new Runnable() {
             @Override
-            public void clicked(InputEvent event, float x, float y) {
+            public void run() {
                 AudioManager.getInstance().playSFX(SFXKeys.UI_CLICK_CONFIRM);
                 GameLogger.logScreen("Navigating → LAN Lobby");
                 game.setScreen(new LobbyScreen(game));
             }
         });
-
-        tutorialBtn.addListener(new ClickListener() {
+        addMenuItem(panel, panelWidth, "TUTORIAL", new Runnable() {
             @Override
-            public void clicked(InputEvent event, float x, float y) {
+            public void run() {
                 AudioManager.getInstance().playSFX(SFXKeys.UI_CLICK_CONFIRM);
                 GameLogger.logScreen("Navigating → Tutorial Screen");
                 game.setScreen(new TutorialScreen(game));
             }
         });
-
-        resumeBtn.addListener(new ClickListener() {
+        addMenuItem(panel, panelWidth, "SAVED GAMES", new Runnable() {
             @Override
-            public void clicked(InputEvent event, float x, float y) {
+            public void run() {
                 AudioManager.getInstance().playSFX(SFXKeys.UI_CLICK_CONFIRM);
                 GameLogger.logScreen("Navigating → Load Game Screen");
                 game.setScreen(new LoadGameScreen(game));
             }
         });
-
-        soundBtn.addListener(new ClickListener() {
+        addMenuItem(panel, panelWidth, "SOUND SETTINGS", new Runnable() {
             @Override
-            public void clicked(InputEvent event, float x, float y) {
+            public void run() {
                 AudioManager.getInstance().playSFX(SFXKeys.UI_CLICK_CONFIRM);
                 new SoundSettingsPopup(game, stage, null, null).show();
             }
         });
-
-        exitBtn.addListener(new ClickListener() {
+        addMenuItem(panel, panelWidth, "EXIT", new Runnable() {
             @Override
-            public void clicked(InputEvent event, float x, float y) {
+            public void run() {
                 AudioManager.getInstance().playSFX(SFXKeys.UI_CLICK_CANCEL);
                 GameLogger.logScreen("Exit requested");
                 Gdx.app.exit();
             }
         });
 
-        // --- TEXT LOGO ---
-        Texture logoTex = game.assets.get(AssetManager.TEXT_LOGO);
-        Image logoImage = new Image(new TextureRegionDrawable(new TextureRegion(logoTex)));
-        logoImage.setScaling(Scaling.fit);
+        panel.add().expandY();
 
-        table.add(logoImage).width(Value.percentWidth(0.5f, table)).height(Value.percentHeight(0.3f, table)).padBottom(15);
-        table.row();
-        table.add(newGameBtn).fillX().width(Value.percentWidth(0.35f, table)).pad(4);
-        table.row();
-        table.add(lanBtn).fillX().width(Value.percentWidth(0.35f, table)).pad(4);
-        table.row();
-        table.add(tutorialBtn).fillX().width(Value.percentWidth(0.35f, table)).pad(4);
-        table.row();
-        table.add(resumeBtn).fillX().width(Value.percentWidth(0.35f, table)).pad(4);
-        table.row();
-        table.add(soundBtn).fillX().width(Value.percentWidth(0.35f, table)).pad(4);
-        table.row();
-        table.add(exitBtn).fillX().width(Value.percentWidth(0.35f, table)).pad(4);
+        root.add(panel).width(panelWidth).height(panelHeight).top();
+    }
+
+    private void addMenuItem(Table panel, float panelWidth, String text, final Runnable onClick) {
+        final Table row = new Table();
+        row.setBackground(game.skin.newDrawable("white", 0f, 0f, 0f, 0.40f));
+        row.setTouchable(Touchable.enabled);
+        row.left();
+
+        final Image accentBar = new Image(game.skin.newDrawable("white", 0.95f, 0.79f, 0.30f, 1f));
+        accentBar.setVisible(false);
+
+        final Label label = new Label(text, game.skin, "menu-item");
+        label.setAlignment(Align.left);
+
+        row.add(accentBar).width(4).fillY();
+        row.add(label).padLeft(16).padTop(10).padBottom(10).left().expandX();
+
+        row.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                accentBar.setVisible(true);
+                label.setStyle(game.skin.get("menu-item-hover", Label.LabelStyle.class));
+                AudioManager.getInstance().playSFX(SFXKeys.UI_HOVER);
+                Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Hand);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                accentBar.setVisible(false);
+                label.setStyle(game.skin.get("menu-item", Label.LabelStyle.class));
+                Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
+            }
+
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                onClick.run();
+            }
+        });
+
+        panel.add(row).width(panelWidth * 0.92f).padBottom(8).padRight(8).right();
+        panel.row();
     }
 
     @Override
@@ -142,6 +180,7 @@ public class MenuScreen implements Screen {
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
+        buildUI();
     }
 
     @Override

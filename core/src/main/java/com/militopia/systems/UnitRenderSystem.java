@@ -44,6 +44,18 @@ public class UnitRenderSystem extends EntitySystem {
     private com.badlogic.gdx.graphics.g2d.TextureRegion shadowRegion;
     private com.badlogic.gdx.graphics.g2d.TextureRegion invincibleRed, invincibleBlue;
     private com.badlogic.gdx.graphics.g2d.TextureRegion digInRegion;
+    private com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> recruitRunAnim;
+    private com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> rangerRunAnim;
+    private com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> sniperRunAnim;
+    private com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> juggernautJumpAnim;
+    private com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> helicopterMoveAnim;
+    private com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> juggernautBoostersAnim;
+    private com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> droneMovingAnim;
+
+    public void setDroneMovingAnim(
+            com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> anim) {
+        this.droneMovingAnim = anim;
+    }
 
     public void setInvincibleRegions(com.badlogic.gdx.graphics.g2d.TextureRegion red,
             com.badlogic.gdx.graphics.g2d.TextureRegion blue) {
@@ -57,6 +69,36 @@ public class UnitRenderSystem extends EntitySystem {
 
     public void setDigInRegion(com.badlogic.gdx.graphics.g2d.TextureRegion r) {
         this.digInRegion = r;
+    }
+
+    public void setRecruitRunAnim(
+            com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> anim) {
+        this.recruitRunAnim = anim;
+    }
+
+    public void setRangerRunAnim(
+            com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> anim) {
+        this.rangerRunAnim = anim;
+    }
+
+    public void setSniperRunAnim(
+            com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> anim) {
+        this.sniperRunAnim = anim;
+    }
+
+    public void setJuggernautJumpAnim(
+            com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> anim) {
+        this.juggernautJumpAnim = anim;
+    }
+
+    public void setHelicopterMoveAnim(
+            com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> anim) {
+        this.helicopterMoveAnim = anim;
+    }
+
+    public void setJuggernautBoostersAnim(
+            com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> anim) {
+        this.juggernautBoostersAnim = anim;
     }
 
     // Reusable removal list (avoids per-frame allocation accumulation)
@@ -90,7 +132,7 @@ public class UnitRenderSystem extends EntitySystem {
     @Override
     public void addedToEngine(com.badlogic.ashley.core.Engine engine) {
         entities = engine.getEntitiesFor(Family.all(GridPositionComponent.class)
-                .one(TextureComponent.class, SpriteAnimationComponent.class).get());
+                .one(TextureComponent.class, SpriteAnimationComponent.class, com.militopia.components.IdleAnimationComponent.class).get());
     }
 
     @Override
@@ -129,6 +171,28 @@ public class UnitRenderSystem extends EntitySystem {
         StatsComponent stats = e.getComponent(StatsComponent.class);
         DeathAnimComponent death = e.getComponent(DeathAnimComponent.class);
         SpriteAnimationComponent spriteAnim = e.getComponent(SpriteAnimationComponent.class);
+        com.militopia.components.AnimationComponent animComp = e
+                .getComponent(com.militopia.components.AnimationComponent.class);
+        com.militopia.components.IdleAnimationComponent idleAnim = e
+                .getComponent(com.militopia.components.IdleAnimationComponent.class);
+        if (idleAnim != null) {
+            if (idleAnim.looping) {
+                idleAnim.stateTime += deltaTime;
+            } else if (idleAnim.paused) {
+                idleAnim.pauseTimer -= deltaTime;
+                if (idleAnim.pauseTimer <= 0f) {
+                    idleAnim.paused = false;
+                    idleAnim.stateTime = 0f;
+                }
+            } else {
+                idleAnim.stateTime += deltaTime;
+                if (idleAnim.animation != null && idleAnim.stateTime >= idleAnim.animation.getAnimationDuration()) {
+                    idleAnim.paused = true;
+                    idleAnim.pauseTimer = MathUtils.random(2f, 3f);
+                    idleAnim.stateTime = 0f;
+                }
+            }
+        }
 
         boolean isMarker = (typeC.type == TypeComponent.Type.MARKER
                 || typeC.type == TypeComponent.Type.TRANSFORM_MARKER);
@@ -268,13 +332,18 @@ public class UnitRenderSystem extends EntitySystem {
         // --- Colour tinting ---
         // (unreachable/tintAlpha logic removed: Recon Drones now 100% opacity)
 
+        boolean isJumpingEarly = (animComp != null
+                && animComp.type == com.militopia.components.AnimationComponent.Type.JUMP
+                && stats != null && stats.unitType == UnitType.JUGGERNAUT
+                && juggernautJumpAnim != null);
+
         if (isAttackMarker) {
             // New enemy marker (draw with original colours)
             batch.setColor(Color.WHITE);
         } else if (isMarker) {
             batch.setColor(Color.WHITE);
         } else if (typeC.type == TypeComponent.Type.UNIT) {
-            if (!GameConfig.TESTING_MODE && stats != null && stats.hasActed) {
+            if (!GameConfig.TESTING_MODE && stats != null && stats.hasActed && move == null && !isJumpingEarly) {
                 if (stats.owner == 1)
                     batch.setColor(0.3f, 0.3f, 0.6f, 1.0f);
                 else if (stats.owner == 2)
@@ -292,11 +361,94 @@ public class UnitRenderSystem extends EntitySystem {
             batch.setColor(Color.WHITE);
         }
 
-        if (tex != null && tex.region != null) {
+        boolean isMovingRecruit = (move != null && stats != null && stats.unitType == UnitType.RECRUIT
+                && recruitRunAnim != null);
+        boolean isMovingRanger = (move != null && stats != null && stats.unitType == UnitType.RANGER
+                && rangerRunAnim != null);
+        boolean isMovingSniper = (move != null && stats != null && stats.unitType == UnitType.SNIPER
+                && sniperRunAnim != null);
+        boolean isMovingApache = (move != null && stats != null && stats.unitType == UnitType.APACHE
+                && helicopterMoveAnim != null);
+        boolean isMovingDrone = (move != null && stats != null && stats.unitType == UnitType.RECON_DRONE
+                && droneMovingAnim != null);
+        com.badlogic.gdx.graphics.g2d.Animation<com.badlogic.gdx.graphics.g2d.TextureRegion> activeRunAnim = isMovingRecruit
+                ? recruitRunAnim
+                : isMovingRanger ? rangerRunAnim
+                        : isMovingSniper ? sniperRunAnim
+                                : isMovingApache ? helicopterMoveAnim
+                                        : isMovingDrone ? droneMovingAnim
+                                                : null;
+
+        boolean isJumping = isJumpingEarly;
+
+        if (tex != null && tex.region != null && activeRunAnim == null && !isJumping
+                && (idleAnim == null || idleAnim.overlayOnly)) {
             batch.draw(tex.region,
                     isoX - xOffset + cfg.offsetX,
                     isoY - yOffset + verticalOff + animY,
                     drawW, drawH);
+        }
+
+        if (idleAnim != null && idleAnim.animation != null && !(idleAnim.overlayOnly && idleAnim.paused)) {
+            float idleT = (idleAnim.looping || !idleAnim.paused) ? idleAnim.stateTime : 0f;
+            com.badlogic.gdx.graphics.g2d.TextureRegion idleFrame = idleAnim.animation.getKeyFrame(idleT, idleAnim.looping);
+            if (idleFrame != null) {
+                float frameX = isoX - xOffset + cfg.offsetX + idleAnim.drawOffsetX;
+                float frameW = drawW;
+                if (idleAnim.respectsFacing && tex != null && tex.region != null && tex.region.isFlipX()) {
+                    frameX += drawW;
+                    frameW = -drawW;
+                }
+                batch.draw(idleFrame, frameX, isoY - yOffset + verticalOff + animY + idleAnim.drawOffsetY, frameW, drawH);
+            }
+        }
+
+        if (activeRunAnim != null) {
+            com.badlogic.gdx.graphics.g2d.TextureRegion runFrame = activeRunAnim.getKeyFrame(move.time, true);
+            if (runFrame != null) {
+                boolean facingLeft = tex != null && tex.region != null && tex.region.isFlipX();
+                float frameX = isoX - xOffset + cfg.offsetX;
+                float frameW = drawW;
+                if (facingLeft) {
+                    frameX += drawW;
+                    frameW = -drawW;
+                }
+                batch.draw(runFrame, frameX, isoY - yOffset + verticalOff + animY, frameW, drawH);
+            }
+        }
+
+        // --- Juggernaut boosters (drawn behind/below the jump sprite) ---
+        if (isJumping && juggernautBoostersAnim != null && animComp.stateTime >= 3 * 0.033f) {
+            float boosterStateTime = animComp.stateTime - 3 * 0.033f;
+            com.badlogic.gdx.graphics.g2d.TextureRegion boosterFrame = juggernautBoostersAnim
+                    .getKeyFrame(boosterStateTime, false);
+            if (boosterFrame != null) {
+                batch.setColor(Color.WHITE);
+                boolean facingLeft = tex != null && tex.region != null && tex.region.isFlipX();
+                float frameX = isoX - xOffset + cfg.offsetX + GameConfig.JUGGERNAUT_BOOSTERS_OFFSET_X;
+                float frameW = drawW;
+                if (facingLeft) {
+                    frameX += drawW;
+                    frameW = -drawW;
+                }
+                batch.draw(boosterFrame, frameX, isoY - yOffset + verticalOff + animY + GameConfig.JUGGERNAUT_BOOSTERS_OFFSET_Y,
+                        frameW, drawH);
+            }
+        }
+
+        if (isJumping) {
+            com.badlogic.gdx.graphics.g2d.TextureRegion jumpFrame = juggernautJumpAnim.getKeyFrame(animComp.stateTime,
+                    false);
+            if (jumpFrame != null) {
+                boolean facingLeft = tex != null && tex.region != null && tex.region.isFlipX();
+                float frameX = isoX - xOffset + cfg.offsetX;
+                float frameW = drawW;
+                if (facingLeft) {
+                    frameX += drawW;
+                    frameW = -drawW;
+                }
+                batch.draw(jumpFrame, frameX, isoY - yOffset + verticalOff + animY, frameW, drawH);
+            }
         }
 
         if (spriteAnim != null && spriteAnim.animation != null && spriteAnim.stateTime >= 0) {
@@ -327,7 +479,7 @@ public class UnitRenderSystem extends EntitySystem {
                 && stats != null && stats.unitType == UnitType.RECRUIT) {
             AbilitiesComponent abilities = e.getComponent(AbilitiesComponent.class);
             if (abilities != null && abilities.isDiggingIn) {
-                DisplayAssetConfig.AssetData sbCfg = DisplayAssetConfig.get("DIG_IN");
+                DisplayAssetConfig.AssetData sbCfg = DisplayAssetConfig.get(AbilitiesComponent.KEY_DIG_IN);
                 batch.draw(digInRegion,
                         isoX - sbCfg.width / 2f + GameConfig.TILE_WIDTH / 2f + sbCfg.offsetX,
                         isoY + sbCfg.offsetY + animY,
@@ -336,11 +488,15 @@ public class UnitRenderSystem extends EntitySystem {
         }
 
         // Selection glow
-        if (tex != null && !isMarker && !isAttackMarker && pos.x == selectedX && pos.y == selectedY) {
+        if ((tex != null || idleAnim != null) && !isMarker && !isAttackMarker && pos.x == selectedX && pos.y == selectedY
+                && activeRunAnim == null && !isJumping) {
             Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
             batch.setBlendFunction(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE);
             batch.setColor(0.4f, 0.4f, 0.4f, 1f);
-            batch.draw(tex.region,
+            com.badlogic.gdx.graphics.g2d.TextureRegion glowRegion = (idleAnim != null && idleAnim.animation != null)
+                    ? idleAnim.animation.getKeyFrame((idleAnim.looping || !idleAnim.paused) ? idleAnim.stateTime : 0f, idleAnim.looping)
+                    : (tex != null ? tex.region : null);
+            if (glowRegion != null) batch.draw(glowRegion,
                     isoX - xOffset + cfg.offsetX,
                     isoY - yOffset + verticalOff + animY,
                     drawW, drawH);
@@ -367,7 +523,8 @@ public class UnitRenderSystem extends EntitySystem {
                     }
                 }
 
-                // Opacity: 100% if currently cloaked, 50% if cloak is broken or sniper in the open
+                // Opacity: 100% if currently cloaked, 50% if cloak is broken or sniper in the
+                // open
                 float alpha = isCurrentlyCloaked ? 1.0f : 0.5f;
 
                 // Position: upper right of the unit sprite
@@ -453,7 +610,7 @@ public class UnitRenderSystem extends EntitySystem {
             TypeComponent type = selectedEntity.getComponent(TypeComponent.class);
             if (stats != null && type.type == TypeComponent.Type.OBJECT
                     && (stats.owner == 1 || stats.owner == 2)
-                    && StructureType.fromDisplayName(stats.name) == StructureType.BASE) {
+                    && stats.unitTypeKey != null && stats.unitTypeKey.startsWith("BASE")) {
                 float isoX = (selectedX - selectedY) * (GameConfig.TILE_WIDTH / 2.0f);
                 float isoY = (selectedX + selectedY) * (GameConfig.TILE_HEIGHT / 2.0f);
                 float xOff = (GameConfig.DRAW_WIDTH - GameConfig.TILE_WIDTH) / 2f;
