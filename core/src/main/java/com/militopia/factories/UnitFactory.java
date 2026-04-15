@@ -776,7 +776,8 @@ public class UnitFactory {
             if (entityFactory != null) {
                 float worldX = EntityFactory.gridToIsoX(pos.x, pos.y);
                 float worldY = EntityFactory.gridToIsoY(pos.x, pos.y);
-                entityFactory.createFloatingText("+" + xpGain + " XP", worldX, worldY, FloatingTextComponent.Type.XP);
+                entityFactory.createFloatingText("+" + xpGain + " XP", worldX, worldY,
+                        FloatingTextComponent.Type.XP, pos.x, pos.y);
             }
         } else if (newOwner == 2) {
             map.objects[pos.x][pos.y] = MapGenerator.ObjectType.BASE_P2;
@@ -798,7 +799,8 @@ public class UnitFactory {
             if (entityFactory != null) {
                 float worldX = EntityFactory.gridToIsoX(pos.x, pos.y);
                 float worldY = EntityFactory.gridToIsoY(pos.x, pos.y);
-                entityFactory.createFloatingText("+" + xpGain + " XP", worldX, worldY, FloatingTextComponent.Type.XP);
+                entityFactory.createFloatingText("+" + xpGain + " XP", worldX, worldY,
+                        FloatingTextComponent.Type.XP, pos.x, pos.y);
             }
         }
 

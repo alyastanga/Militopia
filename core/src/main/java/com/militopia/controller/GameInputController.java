@@ -8,6 +8,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
@@ -215,6 +216,11 @@ public class GameInputController extends InputAdapter {
         int gridX = MathUtils.floor((adjustedY / halfH + adjustedX / halfW) / 2);
         int gridY = MathUtils.floor((adjustedY / halfH - adjustedX / halfW) / 2);
 
+        // Always update lastTouchX/Y regardless of turn state so touchDragged()
+        // can compute the correct delta even for the non-current player.
+        lastTouchX = screenX;
+        lastTouchY = screenY;
+
         // --- LAN LOCKDOWN ---
         // Allow inspection (selecting units/terrain) even if it's not our turn,
         // but block all commands (movement, attack, summon, build).
@@ -226,8 +232,6 @@ public class GameInputController extends InputAdapter {
             return true;
         }
 
-        lastTouchX = screenX;
-        lastTouchY = screenY;
 
         if (gridX >= 0 && gridX < gameMap.width && gridY >= 0 && gridY < gameMap.height) {
             // Reset HUD stage scroll focus so map zoom (scroll wheel) works even
@@ -417,7 +421,10 @@ public class GameInputController extends InputAdapter {
             AudioManager.getInstance().playSFX(SFXKeys.UNIT_SELECT);
         } else if (foundStructure != null) {
             StatsComponent stats = foundStructure.getComponent(StatsComponent.class);
-            gameHUD.showBaseInfoUnified(foundStructure, screen.getGameState(), stats.level, "");
+            TextureRegion region = unitFactory.getHudIcon(
+                    gameMap.objects[gridX][gridY] != null ? gameMap.objects[gridX][gridY]
+                            : MapGenerator.ObjectType.TOWN);
+            gameHUD.showBaseInfo(foundStructure, stats.name, region);
             AudioManager.getInstance().playSFX(SFXKeys.TILE_CLICK);
         } else {
             gameHUD.showTileInfo((withinBounds && isVisible) ? clickedTerrain.name() : "Undiscovered",

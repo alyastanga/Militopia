@@ -180,6 +180,10 @@ public class NewGameScreen implements Screen {
                     newState.p1Name = p1.isEmpty() ? "Player 1" : p1;
                     newState.p2Name = p2.isEmpty() ? "Player 2" : p2;
                     newState.isDevMode = devModeEnabled;
+                    if (newState.mapWidth == 16) {
+                        newState.p1TimeLeft = 600f;
+                        newState.p2TimeLeft = 600f;
+                    }
                     if (devModeEnabled)
                         GameLogger.logScreen("[DEV MODE] Starting dev session");
                     game.setScreen(new GameScreen(game, newState));

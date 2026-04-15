@@ -27,7 +27,7 @@ import com.militopia.screen.GameScreen;
 import com.militopia.systems.ScavengeSystem;
 import com.militopia.systems.StructurePlacementSystem;
 import com.militopia.utils.GameLogger;
-import com.militopia.utils.HoverListener;
+
 
 /**
  * The sliding bottom menu panel — used for summon, hunt, capture, and build
@@ -468,19 +468,7 @@ public class SlideMenu {
             }
         }
 
-        // Cancel button
-        com.badlogic.gdx.scenes.scene2d.ui.TextButton closeBtn = new com.badlogic.gdx.scenes.scene2d.ui.TextButton(
-                "Cancel", game.skin);
-        closeBtn.addListener(new HoverListener());
-        closeBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                AudioManager.getInstance().playSFX(SFXKeys.UI_CLICK_CANCEL);
-                hide();
-                inputController.resetLastClicked();
-            }
-        });
-        content.add(closeBtn).pad(10);
+        // No Cancel button — user can click on the map to dismiss the slide menu
     }
 
     /**

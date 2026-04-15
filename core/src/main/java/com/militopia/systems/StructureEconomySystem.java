@@ -122,7 +122,7 @@ public class StructureEconomySystem extends EntitySystem {
                     float worldX = EntityFactory.gridToIsoX(structStats.parentBaseX, structStats.parentBaseY);
                     float worldY = EntityFactory.gridToIsoY(structStats.parentBaseX, structStats.parentBaseY);
                     entityFactory.createFloatingText("+" + structStats.xpGain + " XP", worldX, worldY,
-                            FloatingTextComponent.Type.XP);
+                            FloatingTextComponent.Type.XP, structStats.parentBaseX, structStats.parentBaseY);
 
                     GameLogger.log(GameLogger.ECONOMY, playerID,
                             "Structure XP: " + structStats.name
@@ -178,12 +178,12 @@ public class StructureEconomySystem extends EntitySystem {
                 // Income text (Bases reflect the per-turn income distrib)
                 if (stats.income > 0) {
                     entityFactory.createFloatingText("+$" + stats.income, worldX, worldY,
-                            FloatingTextComponent.Type.FUNDING);
+                            FloatingTextComponent.Type.FUNDING, pos.x, pos.y);
                     worldY += 15f;
                 }
                 // XP text
                 entityFactory.createFloatingText("+" + naturalGain + " XP", worldX, worldY,
-                        FloatingTextComponent.Type.XP);
+                        FloatingTextComponent.Type.XP, pos.x, pos.y);
             }
 
             unitFactory.checkAndApplyLevelUp(base, gameState, gameHUD);

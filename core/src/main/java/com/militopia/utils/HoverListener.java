@@ -47,9 +47,12 @@ public class HoverListener extends ClickListener {
         super.exit(event, x, y, pointer, toActor);
         
         if (pointer == -1) {
+            Actor actor = event.getListenerActor();
+            if (toActor != null && actor.isAscendantOf(toActor)) {
+                return;
+            }
             Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
             
-            Actor actor = event.getListenerActor();
             actor.setOrigin(actor.getWidth() / 2f, actor.getHeight() / 2f);
             
             actor.clearActions();

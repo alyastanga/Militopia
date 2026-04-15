@@ -39,9 +39,14 @@ public class GameState {
     // --- LAN Multiplayer ---
     public boolean isLanGame = false;
     public int localPlayerID = 1; // 1 or 2. In hotseat, matches currentPlayer.
+    public String lanPassword = "";
 
     // --- Dev Mode ---
     public boolean isDevMode = false;
+
+    // --- Blitz Timer (seconds) ---
+    public float p1TimeLeft = 600f;
+    public float p2TimeLeft = 600f;
 
     public GameState() {
     }
@@ -60,4 +65,20 @@ public class GameState {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss");
         this.timestamp = LocalDateTime.now().format(formatter);
     }
+
+    public static class ChatMessage {
+        public int senderID;
+        public String sender;
+        public String text;
+        
+        public ChatMessage() {}
+        
+        public ChatMessage(int senderID, String sender, String text) {
+            this.senderID = senderID;
+            this.sender = sender;
+            this.text = text;
+        }
+    }
+    
+    public ArrayList<ChatMessage> chatHistory = new ArrayList<>();
 }

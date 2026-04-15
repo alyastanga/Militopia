@@ -28,6 +28,10 @@ public class HudTopBar {
     private Label fundingTitleLabel;
     private Label turnLabel;
 
+    private Table timerGroup;
+    private Label timerLabel;
+    private Label timerTitleLabel;
+
     private final Table topContainer;
 
     public HudTopBar(MilitopiaGame game, AssetManager assets) {
@@ -40,6 +44,10 @@ public class HudTopBar {
         topContent.add(createStatGroup("XP", "0")).expandX().padRight(40);
         topContent.add(createStatGroup("Funding", "1000")).expandX().padLeft(40).padRight(40);
         topContent.add(createStatGroup("Turn", "1")).expandX().padLeft(40);
+
+        timerGroup = createTimerGroup();
+        topContent.add(timerGroup).expandX().padLeft(40);
+        timerGroup.setVisible(false);
 
         topContainer = new Table();
         topContainer.setBackground(topBg);
@@ -107,9 +115,36 @@ public class HudTopBar {
         }
     }
 
+    public void updateTimer(float timeLeft, boolean paused) {
+        if (timerGroup == null) return;
+        timerGroup.setVisible(true);
+        if (paused) {
+            timerLabel.setText("PAUSED");
+            timerLabel.setColor(Color.LIGHT_GRAY);
+            return;
+        }
+        int total = Math.max(0, (int) timeLeft);
+        timerLabel.setText(total / 60 + ":" + String.format("%02d", total % 60));
+        if (timeLeft <= 120f)      timerLabel.setColor(Color.RED);
+        else if (timeLeft <= 300f) timerLabel.setColor(Color.YELLOW);
+        else                       timerLabel.setColor(Color.WHITE);
+    }
+
     // -------------------------------------------------------------------------
     // Private builders
     // -------------------------------------------------------------------------
+
+    private Table createTimerGroup() {
+        Table t = new Table();
+        timerTitleLabel = new Label("Timer", game.skin, "default-font",
+                game.skin.get("color-gold", Color.class));
+        timerTitleLabel.setFontScale(0.75f);
+        timerLabel = new Label("10:00", game.skin, "default-font", Color.WHITE);
+        timerLabel.setFontScale(1.15f);
+        t.add(timerTitleLabel).row();
+        t.add(timerLabel);
+        return t;
+    }
 
     private Table createStatGroup(String title, String placeholderValue) {
         Table t = new Table();

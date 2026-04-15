@@ -182,6 +182,14 @@ public class EntityFactory {
         return entity;
     }
 
+    public Entity createFloatingText(String text, float worldX, float worldY, FloatingTextComponent.Type type, int gridX, int gridY) {
+        Entity entity = engine.createEntity();
+        entity.add(new FloatingTextComponent(text, worldX, worldY, type, gridX, gridY));
+        engine.addEntity(entity);
+        return entity;
+    }
+
+
     public void createExplosion(int x, int y) {
         Entity e = engine.createEntity();
         e.add(new GridPositionComponent(x, y, 4)); // Above units

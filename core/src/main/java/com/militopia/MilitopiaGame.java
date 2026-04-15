@@ -147,13 +147,13 @@ public class MilitopiaGame extends Game {
         panelPatch.setColor(new Color(1f, 1f, 1f, 0.60f));
         skin.add("menu-panel", panelPatch);
 
-        // Standard Button (Dark Gray Rounded)
-        Color semiTransGray = new Color(0.15f, 0.15f, 0.15f, 0.7f);
-        skin.add("btn-std-up", new Texture(createRoundedRect(bw, bh, r, semiTransGray, Color.GRAY, 1)));
+        // Default button style — mirrors "militopia-btn" so all buttons look consistent
         TextButton.TextButtonStyle stdStyle = new TextButton.TextButtonStyle();
-        stdStyle.font = skin.getFont("russo");
+        stdStyle.font = skin.getFont("russo-btn");
         stdStyle.fontColor = Color.WHITE;
-        stdStyle.up = skin.getDrawable("btn-std-up");
+        stdStyle.up = milBtnUp;
+        stdStyle.down = milBtnDown;
+        stdStyle.over = milBtnOver;
         skin.add("default", stdStyle);
 
         ScrollPane.ScrollPaneStyle scrollPaneStyle = new ScrollPane.ScrollPaneStyle();

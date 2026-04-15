@@ -678,7 +678,7 @@ public class CombatSystem extends EntitySystem {
                 : FloatingTextComponent.Type.DAMAGE;
         float worldX = EntityFactory.gridToIsoX(gx, gy);
         float worldY = EntityFactory.gridToIsoY(gx, gy);
-        entityFactory.createFloatingText(label, worldX, worldY, type);
+        entityFactory.createFloatingText(label, worldX, worldY, type, gx, gy);
     }
 
     private boolean isSuperUnit(UnitType type) {

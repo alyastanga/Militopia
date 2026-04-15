@@ -25,6 +25,10 @@ import com.militopia.utils.GameLogger;
 import com.militopia.utils.HoverListener;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
 public class LoadGameScreen implements Screen {
 
@@ -35,11 +39,15 @@ public class LoadGameScreen implements Screen {
     private float fadeTime = 0f;
     private final float FADE_DURATION = 0.3f;
     private GameState selectedState = null;
+    private Texture deleteIconTex;
+    private TextureRegionDrawable deleteIconDrawable;
 
     public LoadGameScreen(final MilitopiaGame game) {
         this.game = game;
         stage = new Stage(new ScreenViewport());
         shapeRenderer = new ShapeRenderer();
+        deleteIconTex = new Texture(Gdx.files.internal("ui/circle_ui_delete.png"));
+        deleteIconDrawable = new TextureRegionDrawable(new TextureRegion(deleteIconTex));
         Gdx.input.setInputProcessor(stage);
 
         Table mainTable = new Table();
@@ -70,6 +78,8 @@ public class LoadGameScreen implements Screen {
 
                     TextButton.TextButtonStyle milStyle = game.skin.get("militopia-btn", TextButton.TextButtonStyle.class);
 
+                    Table rowTable = new Table();
+
                     Table entry = new Table();
                     entry.setBackground(milStyle.up);
 
@@ -98,7 +108,21 @@ public class LoadGameScreen implements Screen {
                         }
                     });
 
-                    listTable.add(entry).fillX().width(680).pad(8).row();
+                    ImageButton delBtn = new ImageButton(deleteIconDrawable);
+                    delBtn.addListener(new HoverListener());
+                    delBtn.addListener(new ClickListener() {
+                        @Override
+                        public void clicked(InputEvent event, float x, float y) {
+                            AudioManager.getInstance().playSFX(SFXKeys.UI_CLICK_CANCEL);
+                            file.delete();
+                            game.setScreen(new LoadGameScreen(game));
+                        }
+                    });
+
+                    rowTable.add(entry).fillX().expandX().padRight(10);
+                    rowTable.add(delBtn).size(80);
+
+                    listTable.add(rowTable).fillX().width(680).pad(8).row();
 
                 } catch (Exception e) {
                     GameLogger.logScreen("Corrupt save file: " + file.name());
@@ -177,5 +201,6 @@ public class LoadGameScreen implements Screen {
     public void dispose() {
         stage.dispose();
         shapeRenderer.dispose();
+        if (deleteIconTex != null) deleteIconTex.dispose();
     }
 }

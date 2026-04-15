@@ -559,6 +559,14 @@ public class UnitRenderSystem extends EntitySystem {
         for (Entity e : floaters) {
             FloatingTextComponent ft = e.getComponent(FloatingTextComponent.class);
 
+            // --- FOG CULL: skip if the source tile is hidden ---
+            if (ft.gridX != -1 && gameMap != null && gameMap.visibleTiles != null
+                    && ft.gridX >= 0 && ft.gridX < gameMap.width
+                    && ft.gridY >= 0 && ft.gridY < gameMap.height
+                    && !gameMap.visibleTiles[ft.gridX][ft.gridY]) {
+                continue;
+            }
+
             // Colour based on text type
             switch (ft.type) {
                 case BLOCKED:
@@ -586,6 +594,7 @@ public class UnitRenderSystem extends EntitySystem {
         font.setColor(Color.WHITE);
         batch.end();
     }
+
 
     // -------------------------------------------------------------------------
     // Base overlay (unchanged from original)

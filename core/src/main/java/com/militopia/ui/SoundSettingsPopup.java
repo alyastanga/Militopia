@@ -60,12 +60,12 @@ public class SoundSettingsPopup {
 
         Table modal = new Table();
         modal.setBackground(game.skin.newDrawable("white", new Color(0.1f, 0.1f, 0.1f, 1f)));
-        modal.pad(40);
+        modal.padLeft(40).padRight(40).padTop(25).padBottom(25);
 
         // Title
         Label title = new Label("SOUND SETTINGS", game.skin, "default-font", Color.WHITE);
-        title.setFontScale(1.8f);
-        modal.add(title).colspan(3).padBottom(30).row();
+        title.setFontScale(1.3f);
+        modal.add(title).colspan(3).padBottom(20).row();
 
         // Master Volume
         addSliderRow(modal, audio,
@@ -77,7 +77,7 @@ public class SoundSettingsPopup {
                     @Override public void setMuted(boolean m) { audio.setMasterMuted(m); }
                 });
 
-        modal.add().height(16).colspan(3).row(); // spacer
+        modal.add().height(10).colspan(3).row(); // spacer
 
         // BGM Volume
         addSliderRow(modal, audio,
@@ -89,7 +89,7 @@ public class SoundSettingsPopup {
                     @Override public void setMuted(boolean m) { audio.setBGMMuted(m); }
                 });
 
-        modal.add().height(16).colspan(3).row(); // spacer
+        modal.add().height(10).colspan(3).row(); // spacer
 
         // SFX Volume
         addSliderRow(modal, audio,
@@ -101,7 +101,7 @@ public class SoundSettingsPopup {
                     @Override public void setMuted(boolean m) { audio.setSFXMuted(m); }
                 });
 
-        modal.add().height(24).colspan(3).row(); // spacer before back
+        modal.add().height(15).colspan(3).row(); // spacer before back
 
         // Back button
         TextButton backBtn = new TextButton("BACK", game.skin, "militopia-btn");
@@ -113,7 +113,7 @@ public class SoundSettingsPopup {
                 dismiss();
             }
         });
-        modal.add(backBtn).colspan(3).fillX().width(260).padTop(10);
+        modal.add(backBtn).colspan(3).fillX().width(300).padTop(10);
 
         popupTable.add(modal);
     }
@@ -124,19 +124,20 @@ public class SoundSettingsPopup {
                                final SliderCallback callback) {
         // Row 1: section label
         Label sectionLabel = new Label(labelText, game.skin, "default-font", Color.WHITE);
-        sectionLabel.setFontScale(1.0f);
+        sectionLabel.setFontScale(0.85f);
         modal.add(sectionLabel).left().colspan(3).padBottom(2).row();
 
         // Row 2: hint label
         Label hintLabel = new Label(hint, game.skin, "standard", Color.LIGHT_GRAY);
-        hintLabel.setFontScale(0.75f);
-        modal.add(hintLabel).left().colspan(3).padBottom(8).row();
+        hintLabel.setFontScale(0.65f);
+        modal.add(hintLabel).left().colspan(3).padBottom(6).row();
 
         // Row 3: slider + mute button
         final Slider slider = new Slider(0f, 1f, 0.05f, false, game.skin);
         slider.setValue(initialValue);
 
         final TextButton muteBtn = new TextButton(initialMuted ? "UNMUTE" : "MUTE", game.skin, "militopia-btn");
+        muteBtn.getLabel().setFontScale(0.8f);
 
         if (initialMuted) {
             slider.setDisabled(true);
@@ -162,7 +163,7 @@ public class SoundSettingsPopup {
             }
         });
 
-        modal.add(slider).width(280).padRight(16);
+        modal.add(slider).width(260).padRight(16);
         modal.add(muteBtn).width(120).row();
     }
 

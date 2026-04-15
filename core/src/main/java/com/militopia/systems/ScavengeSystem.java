@@ -111,11 +111,12 @@ public class ScavengeSystem {
             float worldY = EntityFactory.gridToIsoY(unitPos.x, unitPos.y);
             if (fundingGain > 0) {
                 entityFactory.createFloatingText("+$" + fundingGain, worldX, worldY,
-                        FloatingTextComponent.Type.FUNDING);
+                        FloatingTextComponent.Type.FUNDING, unitPos.x, unitPos.y);
                 worldY += 15f; // Offset if both appear
             }
             if (xpGain > 0) {
-                entityFactory.createFloatingText("+" + xpGain + " XP", worldX, worldY, FloatingTextComponent.Type.XP);
+                entityFactory.createFloatingText("+" + xpGain + " XP", worldX, worldY,
+                        FloatingTextComponent.Type.XP, unitPos.x, unitPos.y);
             }
         }
 

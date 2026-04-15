@@ -59,11 +59,13 @@ jobs:
 
       - name: Collect artifacts
         run: |
+          set -euo pipefail
           NEW_TAG="${{ steps.version.outputs.new_tag }}"
           VERSION_NUM="${{ steps.version.outputs.version_num }}"
-          cp lwjgl3/build/libs/Militopia-${VERSION_NUM}.jar Militopia-${NEW_TAG}-universal.jar
-          cp lwjgl3/build/construo/winX64/Militopia.zip Militopia-${NEW_TAG}-windows.zip
-          cp lwjgl3/build/construo/macM1/Militopia.zip Militopia-${NEW_TAG}-mac-arm64.zip
+          cp "lwjgl3/build/libs/Militopia-${VERSION_NUM}.jar" "Militopia-${NEW_TAG}-universal.jar"
+          
+          (cd lwjgl3/build/construo/winX64 && zip -r "../../../../Militopia-${NEW_TAG}-windows.zip" roast)
+          (cd lwjgl3/build/construo/macM1 && zip -r "../../../../Militopia-${NEW_TAG}-mac-arm64.zip" Militopia.app)
 
       - name: Generate AI release notes
         id: ai_notes
@@ -80,12 +82,17 @@ jobs:
             COMMITS=$(git log ${LATEST_TAG}..HEAD --pretty=format:"%s" | grep -v "^release:")
           fi
 
-          python3 - <<PYEOF
-          import urllib.request, json, os
+          # Pass variables as environment variables to Python to avoid Shell interpolation issues
+          export COMMITS_ENV="$COMMITS"
+          export SUBTITLE_ENV="$SUBTITLE"
+          export NEW_TAG_ENV="$NEW_TAG"
 
-          commits = """${COMMITS}"""
-          subtitle = "${SUBTITLE}"
-          version = "${NEW_TAG}"
+          python3 - <<PYEOF
+          import urllib.request, json, os, urllib.error
+
+          commits = os.environ.get('COMMITS_ENV', '')
+          subtitle = os.environ.get('SUBTITLE_ENV', '')
+          version = os.environ.get('NEW_TAG_ENV', '')
 
           prompt = f"""You are writing release notes for Militopia, a turn-based strategy game.
 
@@ -116,14 +123,25 @@ jobs:
             }
           )
 
-          with urllib.request.urlopen(req) as res:
-            body = json.loads(res.read())
-            summary = body["choices"][0]["message"]["content"]
+          try:
+            with urllib.request.urlopen(req) as res:
+              body = json.loads(res.read())
+              summary = body["choices"][0]["message"]["content"]
 
-          with open("whats_changed.txt", "w") as f:
-            f.write(summary)
+            with open("whats_changed.txt", "w") as f:
+              f.write(summary)
 
-          print("AI summary generated.")
+            print("AI summary generated.")
+          except urllib.error.HTTPError as e:
+            print(f"HTTP Error: {e.code} - {e.reason}")
+            try:
+                print(e.read().decode())
+            except:
+                pass
+            exit(1)
+          except Exception as e:
+            print(f"Error: {str(e)}")
+            exit(1)
           PYEOF
 
       - name: Build release notes

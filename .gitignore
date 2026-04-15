@@ -13,10 +13,15 @@ skills-lock.json
 .agent/
 .claude/
 .planning/
+scripts/
 
 ## OS:
 Thumbs.db
 .DS_Store
+
+## Saves:
+assets/saves/*.json
+!assets/saves/Tutorial.json
 
 ## Other:
 changes.txt

@@ -28,10 +28,19 @@ public class FloatingTextComponent implements Component {
     public float timer = 0f;
     public float alpha = 1f;
 
+    /** Grid tile coordinates of the source unit/structure — used for fog culling. */
+    public int gridX = -1, gridY = -1;
+
     public FloatingTextComponent(String text, float worldX, float worldY, Type type) {
         this.text = text;
         this.worldX = worldX;
         this.worldY = worldY;
         this.type = type;
+    }
+
+    public FloatingTextComponent(String text, float worldX, float worldY, Type type, int gridX, int gridY) {
+        this(text, worldX, worldY, type);
+        this.gridX = gridX;
+        this.gridY = gridY;
     }
 }

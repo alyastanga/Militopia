@@ -91,7 +91,6 @@ public class DisconnectPopup {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 AudioManager.getInstance().playSFX(SFXKeys.UI_CLICK_CONFIRM);
-                // For LAN, we already skip saving, so just return to menu
                 game.setScreen(new com.militopia.screen.MenuScreen(game));
             }
         });

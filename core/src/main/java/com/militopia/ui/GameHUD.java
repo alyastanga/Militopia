@@ -22,6 +22,7 @@ import com.militopia.systems.ScavengeSystem;
 import com.militopia.systems.StructurePlacementSystem;
 import com.militopia.data.GameState;
 import com.militopia.factories.UnitFactory;
+import com.militopia.net.NetworkManager;
 
 /**
  * Thin coordinator / facade for all HUD components.
@@ -82,6 +83,9 @@ public class GameHUD {
 
     // Dev Mode panel
     private DevPanel devPanel;
+
+    // LAN Chat panel
+    private ChatPanel chatPanel;
 
     // Tutorial Overlay
     private TutorialOverlay tutorialOverlay;
@@ -240,7 +244,7 @@ public class GameHUD {
         for (int i = undoSnaps.size() - 1; i >= 0; i--) {
             com.militopia.data.TurnSnapshot snap = undoSnaps.get(i);
             final int index = i;
-            TextButton btn = new TextButton("P" + snap.currentPlayer + " T" + snap.turn, game.skin);
+            TextButton btn = new TextButton("P" + snap.currentPlayer + " T" + snap.turn, game.skin, "militopia-btn");
             btn.getLabel().setFontScale(0.55f);
             btn.getLabel().setColor(snap.currentPlayer == 1 ? Color.SKY : Color.SALMON);
             btn.addListener(new ClickListener() {
@@ -264,7 +268,7 @@ public class GameHUD {
         for (int i = 0; i < redoSnaps.size(); i++) {
             com.militopia.data.TurnSnapshot snap = redoSnaps.get(i);
             final int index = i;
-            TextButton btn = new TextButton("P" + snap.currentPlayer + " T" + snap.turn, game.skin);
+            TextButton btn = new TextButton("P" + snap.currentPlayer + " T" + snap.turn, game.skin, "militopia-btn");
             btn.getLabel().setFontScale(0.55f);
             btn.getLabel().setColor(Color.DARK_GRAY);
             btn.addListener(new ClickListener() {
@@ -298,6 +302,7 @@ public class GameHUD {
             summonMenu.setSize(width, 140);
             summonMenu.setX(0);
         }
+        if (chatPanel != null) chatPanel.resize();
     }
 
     public void dispose() {
@@ -460,5 +465,26 @@ public class GameHUD {
 
     public void showDisconnectPopup(String message) {
         disconnectPopup.show(message);
+    }
+
+    // -------------------------------------------------------------------------
+    // Chat panel
+    // -------------------------------------------------------------------------
+
+    public void buildChatPanel(NetworkManager networkManager, String localPlayerName) {
+        chatPanel = new ChatPanel(game, stage, networkManager, localPlayerName, gameState);
+        chatPanel.build();
+    }
+
+    public void toggleChat() {
+        if (chatPanel != null) chatPanel.toggle();
+    }
+
+    public void addChatMessage(int senderID, String sender, String text) {
+        if (chatPanel != null) chatPanel.addMessage(senderID, sender, text);
+    }
+
+    public void updateTimer(float timeLeft, boolean paused) {
+        topBar.updateTimer(timeLeft, paused);
     }
 }

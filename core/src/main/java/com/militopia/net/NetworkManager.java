@@ -51,10 +51,15 @@ public class NetworkManager {
     private BufferedReader in;
     private Thread readerThread;
 
+    // Heartbeat
+    private static final int HEARTBEAT_INTERVAL_MS = 5_000;
+    private Thread heartbeatThread;
+
     // UDP discovery
     private DatagramSocket discoverySocket;
     private Thread discoveryThread;
     private volatile String discoveredHostIP = null;
+    private volatile boolean discoveredHostIsResume = false;
 
     // Thread-safe incoming message queue (polled on render thread)
     private final ConcurrentLinkedQueue<NetworkMessage> incomingQueue = new ConcurrentLinkedQueue<>();
@@ -69,7 +74,7 @@ public class NetworkManager {
      * Starts listening for a client connection in a background thread.
      * State transitions: IDLE → WAITING → CONNECTED.
      */
-    public void startHost() {
+    public void startHost(boolean isResume) {
         role = Role.HOST;
         state = State.WAITING;
 
@@ -81,7 +86,7 @@ public class NetworkManager {
                 Gdx.app.log(TAG, "Host listening on port " + PORT);
 
                 // Start UDP broadcast so clients can discover us
-                startDiscoveryBroadcast();
+                startDiscoveryBroadcast(isResume);
 
                 socket = serverSocket.accept();
                 Gdx.app.log(TAG, "Client connected: " + socket.getInetAddress());
@@ -90,6 +95,7 @@ public class NetworkManager {
                 state = State.CONNECTED;
                 stopDiscovery();
                 startReaderThread();
+                startHeartbeat();
 
             } catch (IOException e) {
                 if (state != State.DISCONNECTED) {
@@ -104,12 +110,13 @@ public class NetworkManager {
     /**
      * Broadcasts a UDP discovery packet every second so LAN clients can find us.
      */
-    private void startDiscoveryBroadcast() {
+    private void startDiscoveryBroadcast(boolean isResume) {
         discoveryThread = new Thread(() -> {
             try {
                 discoverySocket = new DatagramSocket();
                 discoverySocket.setBroadcast(true);
-                byte[] data = DISCOVERY_MAGIC.getBytes();
+                String msg = DISCOVERY_MAGIC + (isResume ? ":RESUME" : ":NEW");
+                byte[] data = msg.getBytes();
                 InetAddress broadcastAddr = InetAddress.getByName("255.255.255.255");
 
                 while (state == State.WAITING) {
@@ -151,6 +158,7 @@ public class NetworkManager {
                 setupStreams();
                 state = State.CONNECTED;
                 startReaderThread();
+                startHeartbeat();
 
             } catch (IOException e) {
                 Gdx.app.error(TAG, "Client connect error", e);
@@ -177,9 +185,10 @@ public class NetworkManager {
                         DatagramPacket packet = new DatagramPacket(buf, buf.length);
                         discoverySocket.receive(packet);
                         String msg = new String(packet.getData(), 0, packet.getLength());
-                        if (DISCOVERY_MAGIC.equals(msg)) {
+                        if (msg.startsWith(DISCOVERY_MAGIC)) {
                             discoveredHostIP = packet.getAddress().getHostAddress();
-                            Gdx.app.log(TAG, "Discovered host at: " + discoveredHostIP);
+                            discoveredHostIsResume = msg.endsWith(":RESUME");
+                            Gdx.app.log(TAG, "Discovered host at: " + discoveredHostIP + " (Resume: " + discoveredHostIsResume + ")");
                         }
                     } catch (SocketTimeoutException e) {
                         // Keep listening
@@ -201,13 +210,18 @@ public class NetworkManager {
         return discoveredHostIP;
     }
 
+    public boolean isDiscoveredHostResume() {
+        return discoveredHostIsResume;
+    }
+
     // -------------------------------------------------------------------------
     // Shared I/O
     // -------------------------------------------------------------------------
 
     private void setupStreams() throws IOException {
+        socket.setSoTimeout(15_000);   // 15s timeout — dead connection caught here
         out = new PrintWriter(socket.getOutputStream(), true);
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        in  = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 
     private void startReaderThread() {
@@ -216,15 +230,29 @@ public class NetworkManager {
                 String line;
                 while ((line = in.readLine()) != null) {
                     NetworkMessage msg = json.fromJson(NetworkMessage.class, line);
-                    if (msg != null) {
-                        incomingQueue.add(msg);
-                        Gdx.app.log(TAG, "Received: " + msg.type);
+                    if (msg == null) continue;
 
-                        if (NetworkMessage.TYPE_DISCONNECT.equals(msg.type)) {
-                            state = State.DISCONNECTED;
-                            break;
-                        }
+                    // Handle heartbeat inline — do NOT enqueue
+                    if (NetworkMessage.TYPE_PING.equals(msg.type)) {
+                        send(NetworkMessage.pong());
+                        continue;
                     }
+                    if (NetworkMessage.TYPE_PONG.equals(msg.type)) {
+                        continue; // alive — SO_TIMEOUT reset by receiving data
+                    }
+
+                    incomingQueue.add(msg);
+                    Gdx.app.log(TAG, "Received: " + msg.type);
+
+                    if (NetworkMessage.TYPE_DISCONNECT.equals(msg.type)) {
+                        state = State.DISCONNECTED;
+                        break;
+                    }
+                }
+            } catch (SocketTimeoutException e) {
+                if (state != State.DISCONNECTED) {
+                    Gdx.app.log(TAG, "Socket timeout — connection dead");
+                    state = State.DISCONNECTED;
                 }
             } catch (IOException e) {
                 if (state != State.DISCONNECTED) {
@@ -235,6 +263,22 @@ public class NetworkManager {
         }, "NetworkReader");
         readerThread.setDaemon(true);
         readerThread.start();
+    }
+
+    private void startHeartbeat() {
+        heartbeatThread = new Thread(() -> {
+            while (state == State.CONNECTED) {
+                try {
+                    Thread.sleep(HEARTBEAT_INTERVAL_MS);
+                    if (state != State.CONNECTED) break;
+                    send(NetworkMessage.ping());
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        }, "NetworkHeartbeat");
+        heartbeatThread.setDaemon(true);
+        heartbeatThread.start();
     }
 
     // -------------------------------------------------------------------------
@@ -312,6 +356,7 @@ public class NetworkManager {
      */
     public void disconnect() {
         state = State.DISCONNECTED;
+        if (heartbeatThread != null) heartbeatThread.interrupt();
         stopDiscovery();
         try {
             if (out != null) {
