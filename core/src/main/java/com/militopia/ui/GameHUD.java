@@ -145,8 +145,9 @@ public class GameHUD {
         rootTable.setFillParent(true);
         rootTable.add(topBar.getActor()).growX().top().row();
         rootTable.add().expandY().row();
-        rootTable.add(bottomBar.getActor()).growX().bottom();
+        // Remove bottomBar from rootTable to prevent layout from overriding glide animations
         stage.addActor(rootTable);
+        stage.addActor(bottomBar.getActor());
 
         // 3. Build right-panel snapshot overlay (mounted as a stage overlay, not in rootTable)
         buildSnapshotPanel(screen);
@@ -298,6 +299,7 @@ public class GameHUD {
         stage.getViewport().update(width, height, true);
         infoPanel.resize(width, height);
         slideMenu.resize(width, height);
+        bottomBar.resize(width, height);
         if (summonMenu != null) {
             summonMenu.setSize(width, 140);
             summonMenu.setX(0);

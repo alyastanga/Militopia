@@ -95,6 +95,22 @@ public class UnitSelectionHandler {
     public void incrementSelectionIndex() { selectionIndex++; }
     public void resetSelectionIndex() { selectionIndex = 0; }
 
+    public void syncSpatialIndex() {
+        for (java.util.Map.Entry<Entity, long[]> entry : entityIndexInfo.entrySet()) {
+            Entity e = entry.getKey();
+            GridPositionComponent pos = e.getComponent(GridPositionComponent.class);
+            if (pos != null) {
+                long expectedKey = cellKey(pos.x, pos.y);
+                if (entry.getValue()[0] != expectedKey) {
+                    TypeComponent.Type type = TypeComponent.Type.values()[(int) entry.getValue()[1]];
+                    spatialIndex.get(type).remove(entry.getValue()[0]);
+                    spatialIndex.get(type).put(expectedKey, e);
+                    entry.getValue()[0] = expectedKey;
+                }
+            }
+        }
+    }
+
     public void update(float deltaTime) {
         if (bounceTimer > 0) {
             bounceTimer -= deltaTime;
@@ -103,6 +119,7 @@ public class UnitSelectionHandler {
                 bouncingY = -1;
             }
         }
+        syncSpatialIndex();
     }
 
     public void deselect() {

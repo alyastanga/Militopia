@@ -493,13 +493,29 @@ public class UnitRenderSystem extends EntitySystem {
             Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
             batch.setBlendFunction(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE);
             batch.setColor(0.4f, 0.4f, 0.4f, 1f);
-            com.badlogic.gdx.graphics.g2d.TextureRegion glowRegion = (idleAnim != null && idleAnim.animation != null)
+
+            boolean useIdle = (idleAnim != null && idleAnim.animation != null && !idleAnim.overlayOnly);
+            com.badlogic.gdx.graphics.g2d.TextureRegion glowRegion = useIdle
                     ? idleAnim.animation.getKeyFrame((idleAnim.looping || !idleAnim.paused) ? idleAnim.stateTime : 0f, idleAnim.looping)
                     : (tex != null ? tex.region : null);
-            if (glowRegion != null) batch.draw(glowRegion,
-                    isoX - xOffset + cfg.offsetX,
-                    isoY - yOffset + verticalOff + animY,
-                    drawW, drawH);
+
+            if (glowRegion != null) {
+                float frameX = isoX - xOffset + cfg.offsetX;
+                float frameW = drawW;
+                float frameY = isoY - yOffset + verticalOff + animY;
+
+                if (useIdle) {
+                    frameX += idleAnim.drawOffsetX;
+                    frameY += idleAnim.drawOffsetY;
+                    if (idleAnim.respectsFacing && tex != null && tex.region != null && tex.region.isFlipX()) {
+                        frameX += drawW;
+                        frameW = -drawW;
+                    }
+                }
+
+                batch.draw(glowRegion, frameX, frameY, frameW, drawH);
+            }
+
             batch.setBlendFunction(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
             batch.setColor(Color.WHITE);
         }

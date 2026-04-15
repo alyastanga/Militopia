@@ -84,6 +84,13 @@ public class HudBottomBar {
         bottomContainer.setTouchable(blocked ? Touchable.disabled : Touchable.childrenOnly);
     }
 
+    public void resize(int width, int height) {
+        if (bottomContainer != null) {
+            bottomContainer.setWidth(width);
+            bottomContainer.setX(0);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Private builders
     // -------------------------------------------------------------------------
@@ -126,6 +133,10 @@ public class HudBottomBar {
         bottomContainer.add(actionTable).width(barWidth).padBottom(15).padTop(25);
         bottomContainer.row();
         bottomContainer.add(waitingLabel).padBottom(15);
+        
+        bottomContainer.pack();
+        bottomContainer.setWidth(stage.getWidth());
+        bottomContainer.setPosition(0, 0);
 
         // Wire button listeners
         settingsBtn.addListener(new HoverListener());
